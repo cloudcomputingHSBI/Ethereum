@@ -4,7 +4,7 @@ function StartPage() {
   const navigate = useNavigate();
   
   return (
-    <h1 onClick={() => navigate('/survey')} style={{ cursor: 'pointer' }}>
+    <h1 onClick={() => navigate('/createSurvey')} style={{ cursor: 'pointer' }}>
       Willkommen auf der Startseite. Klicke hier, um zur Umfrage zu gelangen!
     </h1>
   );

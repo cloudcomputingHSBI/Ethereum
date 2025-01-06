@@ -83,10 +83,15 @@ export default class Demobar extends React.Component {
                   back_name="Back"
                   answer_data={{}}
                   action_name="Save"
-                  form_action="/"
+                  form_action="/survey"
                   form_method="POST"
                   variables={this.props.variables}
-                  data={this.state.data} />
+                  data={this.state.data} // das ist der form selbst
+                  onSubmit={(formData) => {
+                    console.log("Form data submitted:", formData); // das sind die eingaben
+                    // Hier kannst du die Formulardaten weiterverarbeiten
+                  }}
+                />
 
                 <div className="modal-footer">
                   <button type="button" className="btn btn-default" data-dismiss="modal" onClick={this.closePreview.bind(this)}>Close</button>
@@ -106,7 +111,7 @@ export default class Demobar extends React.Component {
                   back_name="Back"
                   answer_data={{}}
                   action_name="Save"
-                  form_action="/"
+                  form_action="/survey"
                   form_method="POST"
                   read_only={true}
                   variables={this.props.variables}

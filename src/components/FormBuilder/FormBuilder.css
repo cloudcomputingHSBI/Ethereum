@@ -1,6 +1,6 @@
 .react-form-builder-toolbar ul {
-    /* display: flex;
-    flex-wrap: wrap; */
+    display: flex;
+    flex-wrap: wrap; /* vielleicht raus weil ugly */
   }
   
   .react-form-builder-toolbar ul li {
