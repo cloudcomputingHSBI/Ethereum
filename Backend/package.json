@@ -1,0 +1,12 @@
+{
+  "devDependencies": {
+    "prisma": "^6.2.0"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.4.5",
+    "@prisma/client": "^6.2.0"
+  },
+  "scripts": {
+    "start": "functions-framework --target=registerUser --source=functions/index.js"
+  }
+}

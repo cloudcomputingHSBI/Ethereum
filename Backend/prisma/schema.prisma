@@ -1,0 +1,42 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:Speedy2022@34.159.149.229:5432/wahlsystem"
+}
+
+model election {
+  election_id    Int              @id @default(autoincrement())
+  name           String           @db.VarChar(255)
+  description    String?
+  form_schema    Json             @db.Json
+  is_public      Boolean
+  created_by     Int?
+  created_at     DateTime?        @default(now()) @db.Timestamp(6)
+  users          users?           @relation(fields: [created_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  electionaccess electionaccess[]
+}
+
+model electionaccess {
+  access_id      Int       @id @default(autoincrement())
+  election_id    Int?
+  user_id        Int?
+  access_granted Boolean?  @default(true)
+  election       election? @relation(fields: [election_id], references: [election_id], onDelete: NoAction, onUpdate: NoAction)
+  users          users?    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model users {
+  user_id        Int              @id @default(autoincrement())
+  name           String           @db.VarChar(255)
+  email          String           @unique @db.VarChar(255)
+  password_hash  String           @db.VarChar(255)
+  mrz_data       Json             @db.Json
+  is_verified    Boolean?         @default(false)
+  registered_at  DateTime?        @default(now()) @db.Timestamp(6)
+  election       election[]
+  electionaccess electionaccess[]
+}
