@@ -4,9 +4,13 @@
   },
   "dependencies": {
     "@google-cloud/functions-framework": "^3.4.5",
-    "@prisma/client": "^6.2.0"
+    "@prisma/client": "^6.2.0",
+    "bcrypt": "^5.1.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mrz": "^4.2.1"
   },
   "scripts": {
-    "start": "functions-framework --target=registerUser --source=functions/index.js"
+    "start": "functions-framework --target=app"
   }
 }
