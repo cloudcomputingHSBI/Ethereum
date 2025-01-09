@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Form, Button, Alert } from 'react-bootstrap';
+import { loginUser } from '../../api/authService'; // Importiere die Login-API-Methode
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
@@ -8,25 +9,21 @@ const LoginPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const navigate = useNavigate();
 
-  interface LoginCredentials {
-    email: string;
-    password: string;
-  }
-
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
-      const credentials: LoginCredentials = { email, password };
+      // API-Aufruf zur Authentifizierung
+      const response = await loginUser({ email, password });
 
-      // API-Aufruf für Login
-      // await loginUser(credentials);
+      // Speichere das JWT im localStorage
+      localStorage.setItem('jwtToken', response.token);
 
       // Weiterleitung nach erfolgreichem Login
       navigate('/home');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      setErrorMessage('Fehler beim Login.');
+      setErrorMessage(error.message || 'Fehler beim Login.');
     }
   };
 

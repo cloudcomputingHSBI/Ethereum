@@ -22,3 +22,23 @@ export const registerUser = async (data: RegisterUserRequest): Promise<RegisterU
     throw new Error(error.response?.data?.message || 'Fehler bei der Registrierung');
   }
 };
+
+export interface LoginUserRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginUserResponse {
+  message: string;
+  token: string; 
+}
+
+// Benutzer einloggen
+export const loginUser = async (data: LoginUserRequest): Promise<LoginUserResponse> => {
+  try {
+    const response = await apiClient.post<LoginUserResponse>('/loginUser', data);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Fehler beim Login');
+  }
+};

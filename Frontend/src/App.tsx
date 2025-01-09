@@ -13,6 +13,19 @@ import LoginPage from './pages/Authentication/Login';
 import RegisterGeneral from './pages/Authentication/RegisterGeneral';
 import RegisterMRZ from './pages/Authentication/RegisterMRZ';
 
+// Funktion zum Überprüfen, ob ein Benutzer eingeloggt ist
+const isAuthenticated = () => {
+  return !!localStorage.getItem('jwtToken'); // Gibt true zurück, wenn ein Token vorhanden ist
+};
+
+// Higher-Order Component für geschützte Routen
+const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />; // Leitet zur Login-Seite um, wenn der Benutzer nicht eingeloggt ist
+  }
+  return children;
+};
+
 function App() {
   return (
     <Router>
@@ -29,22 +42,37 @@ function App() {
         {/* Registrierungsschritt 2: MRZ-Daten */}
         <Route path="/register-mrz" element={<RegisterMRZ />} />
 
-        {/* Startseite */}
-        <Route path="/home" element={<StartPage />} />
-
-        {/* Survey-Seite */}
-        <Route path="/survey" element={<SurveyPage />} />
-
-        {/* Seite zum Erstellen von Surveys */}
+        {/* Geschützte Routen */}
+        <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <StartPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/survey"
+          element={
+            <ProtectedRoute>
+              <SurveyPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/createSurvey"
           element={
-            <div>
-              <ReactFormBuilder url="/api/formdata" saveUrl="/api/formdata" />
-              <Demobar />
-            </div>
+            <ProtectedRoute>
+              <div>
+                <ReactFormBuilder url="/api/formdata" saveUrl="/api/formdata" />
+                <Demobar />
+              </div>
+            </ProtectedRoute>
           }
         />
+
+        {/* Weiterleitung unbekannter Routen zur Home-Seite */}
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </Router>
   );

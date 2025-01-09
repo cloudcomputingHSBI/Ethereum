@@ -10,6 +10,15 @@ const apiClient = axios.create({
   },
 });
 
+// Interceptor für Authorization-Header
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('jwtToken'); // JWT aus localStorage holen
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`; // JWT in die Anfrage einfügen
+  }
+  return config;
+});
+
 // Interceptor für Fehlerbehandlung
 apiClient.interceptors.response.use(
   (response) => response,

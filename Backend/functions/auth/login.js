@@ -4,6 +4,8 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
+const JWT_SECRET = '12345';
+
 exports.loginUser = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).send({ error: 'Method not allowed' });
@@ -12,27 +14,39 @@ exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await prisma.users.findUnique({ where: { email } });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Bitte alle Felder ausfüllen.' });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    const user = await prisma.users.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: 'Ungültige E-Mail-Adresse oder Passwort.' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Ungültige E-Mail-Adresse oder Passwort.' });
     }
 
     const token = jwt.sign(
-      { id: user.user_id, email: user.email },
-      process.env.JWT_SECRET || 'your_jwt_secret',
-      { expiresIn: '1h' }
+      {
+        userId: user.id,
+        email: user.email,
+      },
+      JWT_SECRET,
+      { expiresIn: '3h' }
     );
 
-    res.status(200).json({ message: 'Login successful', token, user });
+    res.status(200).json({
+      message: 'Login erfolgreich',
+      token,
+    });
   } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ error: 'Something went wrong' });
+    console.error('Fehler beim Login:', error);
+    res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten.' });
   }
 };
