@@ -5,13 +5,10 @@ import { useNavigate } from 'react-router-dom';
 const Header: React.FC = () => {
   const navigate = useNavigate();
 
-  // Beispiel: Benutzername aus localStorage laden
-  const userName = localStorage.getItem('userName') || 'Gast';
-
   // Logout-Funktion
   const handleLogout = () => {
-    localStorage.removeItem('jwtToken'); // Entferne JWT-Token
-    navigate('/login'); // Weiterleitung zur Login-Seite
+    localStorage.removeItem('jwtToken');
+    navigate('/login'); 
   };
 
   return (
