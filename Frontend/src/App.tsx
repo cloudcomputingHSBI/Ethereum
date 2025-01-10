@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import SurveyPage from './pages/SurveyPage/surveyPage';
 import StartPage from './pages/StartPage/StartPage';
 import React from 'react';
@@ -7,6 +7,7 @@ import 'react-form-builder2/dist/app.css';
 import './components/FormBuilder/FormBuilder.css';
 import './index.css';
 import Demobar from './components/Demobar/Demobar';
+import Header from './pages/Header';
 
 // Import Login und Register Pages
 import LoginPage from './pages/Authentication/Login';
@@ -26,54 +27,72 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   return children;
 };
 
+// Funktion, um zu überprüfen, ob der Header angezeigt werden soll
+const ShowHeader = ({ children }: { children: JSX.Element }) => {
+  const location = useLocation();
+  const excludePaths = ['/login', '/register', '/register-mrz'];
+
+  // Header ausblenden, wenn der aktuelle Pfad in excludePaths ist
+  const shouldShowHeader = !excludePaths.includes(location.pathname);
+
+  return (
+    <>
+      {shouldShowHeader && <Header />}
+      {children}
+    </>
+  );
+};
+
 function App() {
   return (
     <Router>
-      <Routes>
-        {/* Standard-Weiterleitung zur Login-Seite */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+      <ShowHeader>
+        <Routes>
+          {/* Standard-Weiterleitung zur Login-Seite */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Login-Seite */}
-        <Route path="/login" element={<LoginPage />} />
+          {/* Login-Seite */}
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* Registrierungsschritt 1: Allgemeine Daten */}
-        <Route path="/register" element={<RegisterGeneral />} />
+          {/* Registrierungsschritt 1: Allgemeine Daten */}
+          <Route path="/register" element={<RegisterGeneral />} />
 
-        {/* Registrierungsschritt 2: MRZ-Daten */}
-        <Route path="/register-mrz" element={<RegisterMRZ />} />
+          {/* Registrierungsschritt 2: MRZ-Daten */}
+          <Route path="/register-mrz" element={<RegisterMRZ />} />
 
-        {/* Geschützte Routen */}
-        <Route
-          path="/home"
-          element={
-            <ProtectedRoute>
-              <StartPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/survey"
-          element={
-            <ProtectedRoute>
-              <SurveyPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/createSurvey"
-          element={
-            <ProtectedRoute>
-              <div>
-                <ReactFormBuilder url="/api/formdata" saveUrl="/api/formdata" />
-                <Demobar />
-              </div>
-            </ProtectedRoute>
-          }
-        />
+          {/* Geschützte Routen */}
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute>
+                <StartPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/survey"
+            element={
+              <ProtectedRoute>
+                <SurveyPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/createSurvey"
+            element={
+              <ProtectedRoute>
+                <div>
+                  <ReactFormBuilder url="/api/formdata" saveUrl="/api/formdata" />
+                  <Demobar />
+                </div>
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Weiterleitung unbekannter Routen zur Home-Seite */}
-        <Route path="*" element={<Navigate to="/home" replace />} />
-      </Routes>
+          {/* Weiterleitung unbekannter Routen zur Home-Seite */}
+          <Route path="*" element={<Navigate to="/home" replace />} />
+        </Routes>
+      </ShowHeader>
     </Router>
   );
 }
