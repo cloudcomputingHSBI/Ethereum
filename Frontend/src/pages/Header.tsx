@@ -12,9 +12,16 @@ const Header: React.FC = () => {
   };
 
   return (
-    <Navbar bg="light" expand="lg" className="mb-4 shadow-sm">
+    <Navbar 
+      bg="light" 
+      expand="lg" 
+      className="mb-4"
+      style={{ borderBottom: '1px solid var(--primary-color)'}}
+    >
       <Container>
-        <Navbar.Brand onClick={() => navigate('/home')} style={{ cursor: 'pointer' }}>
+        <Navbar.Brand 
+          onClick={() => navigate('/home')} 
+          style={{ cursor: 'pointer', color: 'var(--primary-color)', fontSize: '20px', fontWeight: '400'}}>
           Blockchain Wahlsystem
         </Navbar.Brand>
         <Nav className="ml-auto">

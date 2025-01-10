@@ -1,6 +1,15 @@
+.react-form-builder-toolbar {
+  background: transparent !important;
+  margin-top: 0px !important;
+}
+
+.react-form-builder-preview {
+  /* margin-left: 15px; */
+}
+
 .react-form-builder-toolbar ul {
-    display: flex;
-    flex-wrap: wrap; /* vielleicht raus weil ugly */
+    /* display: flex; */
+    /* flex-wrap: wrap;  */
   }
   
   .react-form-builder-toolbar ul li {
@@ -18,3 +27,4 @@
   .react-form-builder-toolbar ul li:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
+
