@@ -18,3 +18,9 @@
   .react-form-builder-toolbar ul li:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
+
+  .react-form-builder .react-form-builder-toolbar {
+
+    margin-top: 0px;
+
+  }

@@ -12,7 +12,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <Navbar bg="light" expand="lg" className="mb-4 shadow-sm">
+    <Navbar bg="light" expand="lg" className="mb-4 shadow-sm" style={{ position: 'absolute', top: '0', width: '100%', zIndex: '99999' }}>
       <Container>
         <Navbar.Brand onClick={() => navigate('/home')} style={{ cursor: 'pointer' }}>
           Blockchain Wahlsystem

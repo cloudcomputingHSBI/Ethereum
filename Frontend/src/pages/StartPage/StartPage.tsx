@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import axios from 'axios';
 import { getAccessibleElections } from '../../api/apiService';
+import ElectionDetailsModal from '../../components/Modals/ElectionDetails';
 
 interface Election {
   election_id: number; // Angepasst von id
@@ -11,6 +12,8 @@ interface Election {
   start_date: string;
   end_date: string;
   is_public: boolean; // Angepasst von isPublic
+  status: string; // Angepasst von status
+  results?: { candidate: string; votes: number }[];
 }
 
 const StartPage: React.FC = () => {
@@ -18,6 +21,18 @@ const StartPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [elections, setElections] = useState<Election[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedElection, setSelectedElection] = useState<Election | null>(null);
+
+  const handleShowModal = (election: Election) => {
+    setSelectedElection(election);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedElection(null);
+  };
 
   useEffect(() => {
     const fetchElections = async () => {
@@ -111,9 +126,14 @@ const StartPage: React.FC = () => {
                       : 'Laufend'}
                   </Card.Text>
                   <div className="d-flex justify-content-between">
-                    <Button variant="secondary" onClick={() => navigate(`/election/${election.election_id}`)}>
+                    <Button variant="secondary" onClick={() => handleShowModal(election)}>
                       Details ansehen
                     </Button>
+                    <ElectionDetailsModal
+                      show={showModal}
+                      onClose={handleCloseModal} // Prop-Namen geändert
+                      election={selectedElection}
+                    />
                     <Button variant="primary">An Wahl teilnehmen</Button>
                   </div>
                 </Card.Body>

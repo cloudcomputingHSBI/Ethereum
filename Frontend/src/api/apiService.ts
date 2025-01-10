@@ -14,3 +14,9 @@ export const getAccessibleElections = async (): Promise<Election[]> => {
   const response = await apiClient.get<Election[]>('/api/elections');
   return response.data;
 };
+
+export const getElectionResults = async (electionId: number): Promise<string> => {
+    const response = await apiClient.get<string>(`/api/elections/${electionId}/results`);
+    return response.data;
+  };
+
