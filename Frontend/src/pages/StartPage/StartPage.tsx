@@ -1,23 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import axios from 'axios';
+import { getAccessibleElections } from '../../api/apiService';
+
+interface Election {
+  election_id: number; // Angepasst von id
+  name: string; // Angepasst von title
+  description: string;
+  start_date: string;
+  end_date: string;
+  is_public: boolean; // Angepasst von isPublic
+}
 
 const StartPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [mockElections] = useState([
-    { id: 1, title: 'Präsidentschaftswahl 2024', description: 'Wählen Sie den nächsten Präsidenten.', status: 'geplant', isPublic: true },
-    { id: 2, title: 'Bürgermeisterwahl', description: 'Wählen Sie den neuen Bürgermeister Ihrer Stadt.', status: 'laufend', isPublic: false },
-    { id: 3, title: 'Klimaschutzabstimmung', description: 'Beteiligung an der Klimaschutzinitiative.', status: 'beendet', isPublic: true },
-  ]);
+  const [elections, setElections] = useState<Election[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredElections = mockElections.filter((election) =>
-    election.title.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    const fetchElections = async () => {
+      try {
+        const response = await getAccessibleElections();
+  
+        
+        setElections(response as Election[]);
+      } catch (error) {
+        console.error('Fehler beim Laden der Wahlen:', error);
+        setElections([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchElections();
+  }, []);
+  
+
+  const filteredElections = elections.filter((election) =>
+    election.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (loading) {
+    return <p className="text-center">Lade Wahlen...</p>;
+  }
 
   return (
     <Container>
-      {/* Begrüßung und Info */}
       <Row className="mb-4 align-items-center">
         <Col>
           <div className="d-flex justify-content-between align-items-center">
@@ -30,16 +60,10 @@ const StartPage: React.FC = () => {
               Wahl erstellen
             </Button>
           </div>
-          <p>
-              Herzlich willkommen beim Blockchain Wahlsystem! Hier können Sie einfach und sicher an demokratischen Prozessen teilnehmen oder eigene Umfragen erstellen.
-            </p>
-            <p>
-              Unser Wahlsystem basiert auf Blockchain-Technologie, um maximale Sicherheit und Transparenz zu gewährleisten. Stimmen Sie ab, erstellen Sie Ihre eigene Wahl oder durchsuchen Sie laufende Wahlen.
-            </p>
+          <p>Herzlich willkommen beim Blockchain Wahlsystem!</p>
         </Col>
       </Row>
 
-      {/* Suchfeld */}
       <Row className="mb-4">
         <Col md={6}>
           <Form.Control
@@ -52,13 +76,12 @@ const StartPage: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Liste der Wahlen */}
       <Row>
         {filteredElections.length > 0 ? (
           filteredElections.map((election) => (
-            <Col md={4} className="mb-4" key={election.id}>
+            <Col md={4} className="mb-4" key={election.election_id}>
               <Card className="shadow-sm position-relative">
-                {!election.isPublic && (
+                {!election.is_public && (
                   <OverlayTrigger
                     placement="top"
                     overlay={<Tooltip>Diese Wahl ist geschlossen.</Tooltip>}
@@ -78,11 +101,17 @@ const StartPage: React.FC = () => {
                   </OverlayTrigger>
                 )}
                 <Card.Body>
-                  <Card.Title>{election.title}</Card.Title>
+                  <Card.Title>{election.name}</Card.Title>
                   <Card.Text>{election.description}</Card.Text>
-                  <Card.Text className="text-muted">Status: {election.status}</Card.Text>
+                  <Card.Text className="text-muted">
+                    Status: {new Date(election.start_date) > new Date()
+                      ? 'Geplant'
+                      : new Date(election.end_date) < new Date()
+                      ? 'Beendet'
+                      : 'Laufend'}
+                  </Card.Text>
                   <div className="d-flex justify-content-between">
-                    <Button variant="secondary" onClick={() => navigate(`/election/${election.id}`)}>
+                    <Button variant="secondary" onClick={() => navigate(`/election/${election.election_id}`)}>
                       Details ansehen
                     </Button>
                     <Button variant="primary">An Wahl teilnehmen</Button>
