@@ -30,9 +30,12 @@ const StartPage: React.FC = () => {
               Wahl erstellen
             </Button>
           </div>
-          <p className="mt-2">
-            Erstellen Sie Ihre eigene Wahl oder nehmen Sie an laufenden Wahlen teil.
-          </p>
+          <p>
+              Herzlich willkommen beim Blockchain Wahlsystem! Hier können Sie einfach und sicher an demokratischen Prozessen teilnehmen oder eigene Umfragen erstellen.
+            </p>
+            <p>
+              Unser Wahlsystem basiert auf Blockchain-Technologie, um maximale Sicherheit und Transparenz zu gewährleisten. Stimmen Sie ab, erstellen Sie Ihre eigene Wahl oder durchsuchen Sie laufende Wahlen.
+            </p>
         </Col>
       </Row>
 

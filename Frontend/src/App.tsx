@@ -8,8 +8,6 @@ import './components/FormBuilder/FormBuilder.css';
 import './index.css';
 import Demobar from './components/Demobar/Demobar';
 import Header from './pages/Header';
-
-// Import Login und Register Pages
 import LoginPage from './pages/Authentication/Login';
 import RegisterGeneral from './pages/Authentication/RegisterGeneral';
 import RegisterMRZ from './pages/Authentication/RegisterMRZ';
