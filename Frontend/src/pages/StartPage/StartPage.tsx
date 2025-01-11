@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import axios from 'axios';
 import { getAccessibleElections } from '../../api/apiService';
 import ElectionDetailsModal from '../../components/Modals/ElectionDetails';
+import { Election } from '../../types';
 
-interface Election {
-  election_id: number; // Angepasst von id
-  name: string; // Angepasst von title
-  description: string;
-  start_date: string;
-  end_date: string;
-  is_public: boolean; // Angepasst von isPublic
-  status: string; // Angepasst von status
-  results?: { candidate: string; votes: number }[];
-}
 
 const StartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +15,22 @@ const StartPage: React.FC = () => {
   const [selectedElection, setSelectedElection] = useState<Election | null>(null);
 
   const handleShowModal = (election: Election) => {
-    setSelectedElection(election);
+    const status = election.start_date && election.end_date
+      ? new Date(election.start_date) > new Date()
+        ? 'Geplant'
+        : new Date(election.end_date) < new Date()
+        ? 'Beendet'
+        : 'Laufend'
+      : 'Unbekannt';
+  
+      setSelectedElection({
+        ...election,
+        description: election.description || 'Keine Beschreibung verfügbar.',
+        start_date: election.start_date || '', // Standardwert
+        end_date: election.end_date || '', // Standardwert
+        status,
+      });
+      
     setShowModal(true);
   };
 
@@ -38,8 +43,6 @@ const StartPage: React.FC = () => {
     const fetchElections = async () => {
       try {
         const response = await getAccessibleElections();
-  
-        
         setElections(response as Election[]);
       } catch (error) {
         console.error('Fehler beim Laden der Wahlen:', error);
@@ -48,10 +51,9 @@ const StartPage: React.FC = () => {
         setLoading(false);
       }
     };
-  
+
     fetchElections();
   }, []);
-  
 
   const filteredElections = elections.filter((election) =>
     election.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -96,10 +98,10 @@ const StartPage: React.FC = () => {
           filteredElections.map((election) => (
             <Col md={4} className="mb-4" key={election.election_id}>
               <Card className="shadow-sm position-relative">
-                {!election.is_public && (
+                {election.password && (
                   <OverlayTrigger
                     placement="top"
-                    overlay={<Tooltip>Diese Wahl ist geschlossen.</Tooltip>}
+                    overlay={<Tooltip>Diese Wahl ist passwortgeschützt.</Tooltip>}
                   >
                     <div
                       style={{
@@ -117,23 +119,20 @@ const StartPage: React.FC = () => {
                 )}
                 <Card.Body>
                   <Card.Title>{election.name}</Card.Title>
-                  <Card.Text>{election.description}</Card.Text>
+                  <Card.Text>{election.description || 'Keine Beschreibung verfügbar.'}</Card.Text>
                   <Card.Text className="text-muted">
-                    Status: {new Date(election.start_date) > new Date()
-                      ? 'Geplant'
-                      : new Date(election.end_date) < new Date()
-                      ? 'Beendet'
-                      : 'Laufend'}
+                    Status: {election.start_date && election.end_date
+                      ? new Date(election.start_date) > new Date()
+                        ? 'Geplant'
+                        : new Date(election.end_date) < new Date()
+                        ? 'Beendet'
+                        : 'Laufend'
+                      : 'Unbekannt'}
                   </Card.Text>
                   <div className="d-flex justify-content-between">
                     <Button variant="secondary" onClick={() => handleShowModal(election)}>
                       Details ansehen
                     </Button>
-                    <ElectionDetailsModal
-                      show={showModal}
-                      onClose={handleCloseModal} // Prop-Namen geändert
-                      election={selectedElection}
-                    />
                     <Button variant="primary">An Wahl teilnehmen</Button>
                   </div>
                 </Card.Body>
@@ -146,6 +145,12 @@ const StartPage: React.FC = () => {
           </Col>
         )}
       </Row>
+
+      <ElectionDetailsModal
+        show={showModal}
+        onClose={handleCloseModal}
+        election= {selectedElection}
+      />
     </Container>
   );
 };

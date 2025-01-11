@@ -1,17 +1,11 @@
 import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
+import { Election } from '../../types';
 
 interface ElectionDetailsModalProps {
   show: boolean;
   onClose: () => void;
-  election: {
-    name: string;
-    description: string;
-    start_date: string;
-    end_date: string;
-    status: string;
-    results?: { candidate: string; votes: number }[];
-  } | null;
+  election: Election | null;
 }
 
 const ElectionDetailsModal: React.FC<ElectionDetailsModalProps> = ({ show, onClose, election }) => {
@@ -32,24 +26,16 @@ const ElectionDetailsModal: React.FC<ElectionDetailsModalProps> = ({ show, onClo
         <div>
           <h5 className="text-secondary">Beschreibung:</h5>
           <p>{election.description}</p>
+          <h5 className="text-secondary">Blockchain-Id:</h5>
+          <p>{election.blockchain_id}</p>
           <h5 className="text-secondary">Startdatum:</h5>
-          <p>{new Date(election.start_date).toLocaleDateString()}</p>
+          <p>{election.start_date ? new Date(election.start_date).toLocaleDateString() : 'Unbekannt'}</p>
           <h5 className="text-secondary">Enddatum:</h5>
-          <p>{new Date(election.end_date).toLocaleDateString()}</p>
+          <p>{election.end_date ? new Date(election.end_date).toLocaleDateString() : 'Unbekannt'}</p>
           <h5 className="text-secondary">Status:</h5>
-          <p>{election.status}</p>
+          <p>{election.status || 'Unbekannt'}</p>
           <h5 className="text-secondary">Ergebnisse:</h5>
-            {election.results && election.results.length > 0 ? (
-            <ul>
-                {election.results.map((result, index) => (
-                <li key={index}>
-                    {result.candidate}: {result.votes} Stimmen
-                </li>
-                ))}
-            </ul>
-            ) : (
-            <p>Noch keine Ergebnisse verfügbar.</p>
-            )}
+          <p>Die Ergebnisse dieser Wahl sind noch nicht verfügbar.</p>
         </div>
       </Modal.Body>
       <Modal.Footer>
@@ -59,20 +45,20 @@ const ElectionDetailsModal: React.FC<ElectionDetailsModalProps> = ({ show, onClo
       </Modal.Footer>
       <style>
         {`
-            .modal-backdrop {
+          .modal-backdrop {
             background-color: rgba(0, 0, 0, 0.3) !important;
-            }
+          }
 
-            .modal-content {
+          .modal-content {
             border-radius: 10px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-            }
+          }
 
-            .modal-header {
+          .modal-header {
             border-bottom: none;
-            }
+          }
         `}
-        </style>
+      </style>
     </Modal>
   );
 };

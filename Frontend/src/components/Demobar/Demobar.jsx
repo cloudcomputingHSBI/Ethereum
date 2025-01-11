@@ -16,6 +16,8 @@ export default class Demobar extends React.Component {
       password: '',
       startdate: '',
       enddate: '',
+      isProtected: false, // Zustand für geschützte Wahl
+      formNameError: '',
     };
 
     this._onUpdate = this._onChange.bind(this);
@@ -79,7 +81,14 @@ export default class Demobar extends React.Component {
   }
 
   onFormSave(formData) {
-      saveForm(this.state.formName, this.state.formDescription, formData, this.state.startdate, this.state.enddate, this.state.password)
+    saveForm(
+      this.state.formName,
+      this.state.formDescription,
+      formData,
+      this.state.startdate,
+      this.state.enddate,
+      this.state.isProtected ? this.state.password : null // Nur speichern, wenn die Wahl geschützt ist
+    );
   }
 
   render() {
@@ -109,10 +118,8 @@ export default class Demobar extends React.Component {
           {this.state.formName ? this.state.formName : ''}
         </h4>
         <button className="btn btn-primary float-right" style={{ marginRight: '10px' }} onClick={this.showPreview.bind(this)}>Preview Form</button>
-        {/* <button className="btn btn-default float-right" style={{ marginRight: '10px' }} onClick={this.showShortPreview.bind(this)}>Alternate/Short Form</button> */}
-        {/* <button className="btn btn-default float-right" style={{ marginRight: '10px' }} onClick={this.showRoPreview.bind(this)}>Read Only Form</button> */}
 
-        { this.state.previewVisible &&
+        {this.state.previewVisible && (
           <div className={modalClass}>
             <div className="modal-dialog modal-lg">
               <div className="modal-content">
@@ -125,17 +132,18 @@ export default class Demobar extends React.Component {
                   form_action="/survey"
                   form_method="POST"
                   variables={this.props.variables}
-                  data={this.state.data} // das ist der form selbst
-                  onSubmit= {() => {this.onFormSave(this.state.data)}}
+                  data={this.state.data}
+                  onSubmit={() => {
+                    this.onFormSave(this.state.data);
+                  }}
                 />
-
                 <div className="modal-footer">
                   <button type="button" className="btn btn-default" data-dismiss="modal" onClick={this.closePreview.bind(this)}>Close</button>
                 </div>
               </div>
             </div>
           </div>
-        }
+        )}
 
         {this.state.formDetailsVisible && (
           <div className={formDetailsClass}>
@@ -145,6 +153,12 @@ export default class Demobar extends React.Component {
                   <h5 className="modal-title">Erstelle eine Wahl</h5>
                 </div>
                 <div className="modal-body">
+                  <p className="text-muted">
+                    Geben Sie zunächst die Eckdaten der Wahl (Name, Beschreibung, Startdatum und Enddatum) ein. 
+                    Falls die Wahl geschützt werden soll, aktivieren Sie die Checkbox und vergeben ein Passwort.
+                    Im nächsten Schritt können Sie mit dem Formbuilder die Wahlstruktur erstellen und 
+                    anschließend in der Vorschau überprüfen. Speichern Sie die Wahl über die Schaltfläche "Preview -{'>'} Save".
+                  </p>
                   <div className="form-group">
                     <label>Name</label>
                     <input
@@ -167,6 +181,45 @@ export default class Demobar extends React.Component {
                       onChange={(e) => this.setState({ formDescription: e.target.value })}
                     />
                   </div>
+                  <div className="form-group">
+                    <label>Startdatum</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={this.state.startdate}
+                      onChange={(e) => this.setState({ startdate: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Enddatum</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={this.state.enddate}
+                      onChange={(e) => this.setState({ enddate: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={this.state.isProtected}
+                        onChange={(e) => this.setState({ isProtected: e.target.checked })}
+                      />
+                      Geschützte Wahl
+                    </label>
+                  </div>
+                  {this.state.isProtected && (
+                    <div className="form-group">
+                      <label>Passwort</label>
+                      <input
+                        type="password"
+                        className="form-control"
+                        value={this.state.password}
+                        onChange={(e) => this.setState({ password: e.target.value })}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="modal-footer">
                   <button
@@ -181,53 +234,6 @@ export default class Demobar extends React.Component {
             </div>
           </div>
         )}
-
-        { this.state.roPreviewVisible &&
-          <div className={modalClass} role="dialog">
-            <div className="modal-dialog modal-lg" role="document">
-              <div className="modal-content">
-                <ReactFormGenerator
-                  download_path=""
-                  back_action="/"
-                  back_name="Back"
-                  answer_data={{}}
-                  action_name="Save"
-                  form_action="/survey"
-                  form_method="POST"
-                  read_only={true}
-                  variables={this.props.variables}
-                  hide_actions={true} data={this.state.data} />
-
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-default" data-dismiss="modal" onClick={this.closePreview.bind(this)}>Close</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        }
-
-        { this.state.shortPreviewVisible &&
-          <div className={shortModalClass}>
-            <div className="modal-dialog modal-lg">
-              <div className="modal-content">
-                <ReactFormGenerator
-                  download_path=""
-                  back_action=""
-                  answer_data={{}}
-                  form_action="/"
-                  form_method="POST"
-                  data={this.state.data}
-                  display_short={true}
-                  variables={this.props.variables}
-                  hide_actions={false} />
-
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-default" data-dismiss="modal" onClick={this.closePreview.bind(this)}>Close</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        }
       </div>
     );
   }

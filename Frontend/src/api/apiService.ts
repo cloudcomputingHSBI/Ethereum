@@ -1,13 +1,5 @@
 import apiClient from './index';
-
-export interface Election {
-  election_id: number;
-  name: string;
-  description: string;
-  start_date: string | null;
-  end_date: string | null;
-  is_public: boolean;
-}
+import { Election } from '../types';
 
 // Funktion: Wahlen abrufen
 export const getAccessibleElections = async (): Promise<Election[]> => {
@@ -20,14 +12,14 @@ export const getElectionResults = async (electionId: number): Promise<string> =>
     return response.data;
   };
 
-export const saveForm = async (name: string, description: string, formData : any, password : string, startdate : Date, enddate : Date): Promise<void> => {
+export const saveForm = async (name: string, description: string, formData : any,  startdate : Date, enddate : Date, password : string): Promise<void> => {
   const response = await apiClient.post('/api/createElection', {
     name,
     description,
     formData,
-    password,
     startdate,
-    enddate
+    enddate,
+    password
   });
   return response.data;
 }

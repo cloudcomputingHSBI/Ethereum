@@ -15,8 +15,8 @@ router.get('/elections', authenticateToken, async (req, res) => {
     const elections = await prisma.election.findMany({
       where: {
         OR: [
-          { is_public: true },
-          { electionaccess: { some: { user_id: userId, access_granted: true } } },
+          { password: null }, // Öffentlich, falls kein Passwort
+          { created_by: userId }, // Wahlen, die vom Nutzer erstellt wurden
         ],
       },
       select: {
@@ -25,7 +25,10 @@ router.get('/elections', authenticateToken, async (req, res) => {
         description: true,
         start_date: true,
         end_date: true,
-        is_public: true,
+        blockchain_id: true,
+        password: true,
+        created_by: true,
+        created_at: true,
       },
     });
 
@@ -36,40 +39,34 @@ router.get('/elections', authenticateToken, async (req, res) => {
   }
 });
 
+// Route: Neue Wahl erstellen
 router.post('/createElection', authenticateToken, async (req, res) => {
-
   try {
-
     const userId = req.user.id;
 
-    let { name, description, formData, password, startDate, endDate} = req.body;
+    const { name, description, formData, startdate, enddate, password } = req.body;
 
-    // Nur gemocked!!!!
-    startDate = new Date();
-    endDate = new Date();
 
     // Erstelle eine neue Wahl
     const election = await prisma.election.create({
-      data: 
-      {
+      data: {
         name,
         description,
-        start_date: new Date(startDate),
-        end_date: new Date(endDate),
-        password,
+        start_date: startdate ? new Date(startdate) : null,
+        end_date: enddate ? new Date(enddate) : null,
+        password: password || null,
         created_by: userId,
-        form_schema: formData,
-        }
-    })
+        form_schema: formData || {},
+      },
+    });
+
+    
 
     res.json(election);
-
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Fehler beim Erstellen der Wahl:', error);
-    res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten' });
+    res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten.' });
   }
-
 });
 
 module.exports = router;
