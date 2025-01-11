@@ -1,5 +1,6 @@
 import React from 'react';
 import { ReactFormGenerator, ElementStore } from 'react-form-builder2';
+import { saveForm } from '../../api/apiService';
 
 export default class Demobar extends React.Component {
   constructor(props) {
@@ -12,6 +13,9 @@ export default class Demobar extends React.Component {
       formDetailsVisible: true,
       formName: '',
       formDescription: '',
+      password: '',
+      startdate: '',
+      enddate: '',
     };
 
     this._onUpdate = this._onChange.bind(this);
@@ -51,8 +55,6 @@ export default class Demobar extends React.Component {
       return;
     }
 
-    console.log("Form Name:", this.state.formName);
-    console.log("Form Description:", this.state.formDescription);
     this.closeFormDetails();
   }
 
@@ -77,9 +79,7 @@ export default class Demobar extends React.Component {
   }
 
   onFormSave(formData) {
-    console.log('Form Saved');
-    console.log('Data', formData);
-
+      saveForm(this.state.formName, this.state.formDescription, formData, this.state.startdate, this.state.enddate, this.state.password)
   }
 
   render() {
@@ -126,7 +126,7 @@ export default class Demobar extends React.Component {
                   form_method="POST"
                   variables={this.props.variables}
                   data={this.state.data} // das ist der form selbst
-                  onSubmit= {this.onFormSave.bind(this)}
+                  onSubmit= {() => {this.onFormSave(this.state.data)}}
                 />
 
                 <div className="modal-footer">

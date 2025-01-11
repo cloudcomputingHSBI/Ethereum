@@ -36,4 +36,40 @@ router.get('/elections', authenticateToken, async (req, res) => {
   }
 });
 
+router.post('/createElection', authenticateToken, async (req, res) => {
+
+  try {
+
+    const userId = req.user.id;
+
+    let { name, description, formData, password, startDate, endDate} = req.body;
+
+    // Nur gemocked!!!!
+    startDate = new Date();
+    endDate = new Date();
+
+    // Erstelle eine neue Wahl
+    const election = await prisma.election.create({
+      data: 
+      {
+        name,
+        description,
+        start_date: new Date(startDate),
+        end_date: new Date(endDate),
+        password,
+        created_by: userId,
+        form_schema: formData,
+        }
+    })
+
+    res.json(election);
+
+  }
+  catch (error) {
+    console.error('Fehler beim Erstellen der Wahl:', error);
+    res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten' });
+  }
+
+});
+
 module.exports = router;

@@ -20,3 +20,14 @@ export const getElectionResults = async (electionId: number): Promise<string> =>
     return response.data;
   };
 
+export const saveForm = async (name: string, description: string, formData : any, password : string, startdate : Date, enddate : Date): Promise<void> => {
+  const response = await apiClient.post('/api/createElection', {
+    name,
+    description,
+    formData,
+    password,
+    startdate,
+    enddate
+  });
+  return response.data;
+}
