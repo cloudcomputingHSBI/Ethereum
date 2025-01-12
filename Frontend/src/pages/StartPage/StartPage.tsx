@@ -1,43 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Form, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { getAccessibleElections } from '../../api/apiService';
-import ElectionDetailsModal from '../../components/Modals/ElectionDetails';
+import { Container, Row, Col, Card, Form, Button, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { getAccessibleElections, getElectionDetails } from '../../api/apiService';
 import { Election } from '../../types';
-
+import { ReactFormGenerator } from 'react-form-builder2';
 
 const StartPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [elections, setElections] = useState<Election[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showVotingModal, setShowVotingModal] = useState(false);
   const [selectedElection, setSelectedElection] = useState<Election | null>(null);
-
-  const handleShowModal = (election: Election) => {
-    const status = election.start_date && election.end_date
-      ? new Date(election.start_date) > new Date()
-        ? 'Geplant'
-        : new Date(election.end_date) < new Date()
-        ? 'Beendet'
-        : 'Laufend'
-      : 'Unbekannt';
-  
-      setSelectedElection({
-        ...election,
-        description: election.description || 'Keine Beschreibung verfügbar.',
-        start_date: election.start_date || '', // Standardwert
-        end_date: election.end_date || '', // Standardwert
-        status,
-      });
-      
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedElection(null);
-  };
+  const [formSchema, setFormSchema] = useState<any>(null);
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     const fetchElections = async () => {
@@ -54,6 +31,66 @@ const StartPage: React.FC = () => {
 
     fetchElections();
   }, []);
+
+  const handleShowDetailsModal = (election: Election) => {
+    const status =
+      election.start_date && election.end_date
+        ? new Date(election.start_date) > new Date()
+          ? 'Geplant'
+          : new Date(election.end_date) < new Date()
+          ? 'Beendet'
+          : 'Laufend'
+        : 'Unbekannt';
+  
+    setSelectedElection({
+      ...election,
+      description: election.description || 'Keine Beschreibung verfügbar.',
+      status, // Status setzen
+    });
+  
+    setShowDetailsModal(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedElection(null);
+  };
+
+  const handleJoinElection = async (election: Election) => {
+    let enteredPassword = '';
+  
+    if (election.password) {
+      // Passwortvalidierung
+      enteredPassword = prompt('Bitte geben Sie das Passwort ein:') || '';
+      if (!enteredPassword) {
+        alert('Kein Passwort eingegeben!');
+        return;
+      }
+    }
+  
+    try {
+      console.log('Verwendetes Passwort:', enteredPassword);
+      const electionDetails = await getElectionDetails(election.election_id, enteredPassword);
+      setFormSchema(electionDetails.form_schema);
+      setSelectedElection(election);
+      setShowVotingModal(true);
+    } catch (error) {
+      alert('Ungültiges Passwort oder Fehler beim Abrufen der Wahldaten.');
+    }
+  };
+  
+
+  const handleCloseVotingModal = () => {
+    setShowVotingModal(false);
+    setFormSchema(null);
+    setSelectedElection(null);
+  };
+
+  const handleFormSubmit = (submittedData: any) => {
+    console.log('Abgestimmte Daten:', submittedData);
+    alert('Vielen Dank für Ihre Stimme!');
+    handleCloseVotingModal();
+  };
 
   const filteredElections = elections.filter((election) =>
     election.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -130,10 +167,12 @@ const StartPage: React.FC = () => {
                       : 'Unbekannt'}
                   </Card.Text>
                   <div className="d-flex justify-content-between">
-                    <Button variant="secondary" onClick={() => handleShowModal(election)}>
-                      Details ansehen
+                    <Button variant="secondary" onClick={() => handleShowDetailsModal(election)}>
+                      Details 
                     </Button>
-                    <Button variant="primary">An Wahl teilnehmen</Button>
+                    <Button variant="primary" onClick={() => handleJoinElection(election)}>
+                      Abstimmen
+                    </Button>
                   </div>
                 </Card.Body>
               </Card>
@@ -146,11 +185,60 @@ const StartPage: React.FC = () => {
         )}
       </Row>
 
-      <ElectionDetailsModal
-        show={showModal}
-        onClose={handleCloseModal}
-        election= {selectedElection}
-      />
+      {/* Modal für Wahldetails */}
+      <Modal show={showDetailsModal} onHide={handleCloseDetailsModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>{selectedElection?.name}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>{selectedElection?.description}</p>
+          <p><strong>Status:</strong> {selectedElection?.status}</p>
+          <p><strong>Startdatum:</strong> {selectedElection?.start_date ? new Intl.DateTimeFormat('de-DE').format(new Date(selectedElection.start_date)) : 'Unbekannt'}</p>
+          <p><strong>Enddatum:</strong> {selectedElection?.end_date ? new Intl.DateTimeFormat('de-DE').format(new Date(selectedElection.end_date)) : 'Unbekannt'}</p>
+          <hr />
+          <h5>Ergebnisse:</h5>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseDetailsModal}>
+            Schließen
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal für Abstimmung */}
+      <Modal show={showVotingModal} onHide={handleCloseVotingModal} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Abstimmen: {selectedElection?.name}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {formSchema ? (
+            <ReactFormGenerator
+              data={formSchema}
+              onSubmit={handleFormSubmit}
+              action_name=' ' // Dummy-Wert, da keine echte Aktion erforderlich ist
+              form_action="" // Dummy-Wert, da keine echte Aktion erforderlich ist
+              form_method="POST" // Standardwert für Formulare
+            />
+          ) : (
+            <p>Formulardaten werden geladen...</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer className="d-flex justify-content-between">
+          <Button variant="secondary" onClick={handleCloseVotingModal} style={{ alignSelf: 'flex-start' }}>
+            Abbrechen
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              // Der `onSubmit`-Handler wird hier explizit aufgerufen
+              const form = document.querySelector('form');
+              form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }}
+          >
+            Abstimmen
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

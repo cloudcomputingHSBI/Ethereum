@@ -69,4 +69,29 @@ router.post('/createElection', authenticateToken, async (req, res) => {
   }
 });
 
+router.post('/elections/:id/details', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+
+    const election = await prisma.election.findUnique({
+      where: { election_id: parseInt(id, 10) },
+    });
+
+    if (!election) {
+      return res.status(404).json({ error: 'Wahl nicht gefunden' });
+    }
+
+    // Passwort validieren (falls erforderlich)
+    if (election.password && election.password !== password) {
+      return res.status(403).json({ error: 'Ungültiges Passwort' });
+    }
+
+    res.json(election); // Rückgabe der Wahldaten
+  } catch (error) {
+    console.error('Fehler beim Abrufen der Wahldetails:', error);
+    res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten' });
+  }
+});
+
 module.exports = router;

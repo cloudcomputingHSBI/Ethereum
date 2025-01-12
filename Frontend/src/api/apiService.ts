@@ -23,3 +23,10 @@ export const saveForm = async (name: string, description: string, formData : any
   });
   return response.data;
 }
+
+export const getElectionDetails = async (electionId: number, password?: string): Promise<Election> => {
+  const response = await apiClient.post<Election>(`/api/elections/${electionId}/details`, {
+    password,
+  });
+  return response.data;
+};
