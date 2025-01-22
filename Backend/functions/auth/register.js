@@ -1,8 +1,27 @@
 const bcrypt = require('bcrypt');
 const { PrismaClient } = require('@prisma/client');
 const parse = require('mrz').parse;
+const crypto = require('crypto');
+const ethers = require('ethers');
+
 
 const prisma = new PrismaClient();
+
+// Funktion zur Verschlüsselung des privaten Schlüssels mit `crypto.createCipheriv`
+function encryptPrivateKey(privateKey, secret) {
+  const iv = crypto.randomBytes(16);
+  const key = crypto.createHash('sha256').update(secret).digest();
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+
+  let encrypted = cipher.update(privateKey, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  
+  // Rückgabe der verschlüsselten Daten zusammen mit dem IV
+  return {
+    encryptedData: encrypted,
+    iv: iv.toString('hex'),
+  };
+}
 
 exports.registerUser = async (req, res) => {
   if (req.method !== 'POST') {
@@ -58,7 +77,24 @@ exports.registerUser = async (req, res) => {
       },
     });
 
-    res.status(201).json({ message: 'Benutzer erfolgreich registriert.', user });
+    // Generiere ein neues Wallet für den Benutzer
+    const wallet = ethers.Wallet.createRandom();
+
+    // Verschlüssle den privaten Schlüssel
+    const secret = process.env.PRIVATE_KEY_SECRET || 'geheim';
+    const { encryptedData, iv } = encryptPrivateKey(wallet.privateKey, secret);
+
+    // Speichere das Wallet in der Datenbank
+    await prisma.wallets.create({
+      data: {
+        user_id: user.user_id,
+        wallet_address: wallet.address,
+        encrypted_private_key: encryptedData,
+        iv: iv,
+      },
+    });
+
+    res.status(201).json({ message: 'Benutzer und Wallet erfolgreich registriert.', user });
   } catch (error) {
     console.error('Fehler bei der Registrierung:', error);
     res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten.' });
