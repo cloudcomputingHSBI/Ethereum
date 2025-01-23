@@ -12,12 +12,9 @@ async function main() {
   console.log("MyNFT deployed to:", myNftAddress);
 
   // 2) Beispiel: Ein paar NFTs minten
-  const [owner, addr1] = await ethers.getSigners();
+  const [owner] = await ethers.getSigners();
   let tx = await myNft.mint(owner.address);
   await tx.wait();
-  tx = await myNft.mint(addr1.address);
-  await tx.wait();
-  console.log(`Minted NFTs to ${owner.address} and ${addr1.address}`);
 
   // 3) NFTVoting-Contract deployen
   const candidateNames = ["Alice", "Bob", "Charlie"];
@@ -32,14 +29,6 @@ async function main() {
   tx = await nftVoting.vote(0);
   await tx.wait();
   console.log(`Owner (${owner.address}) hat für ${candidateNames[0]} abgestimmt`);
-  console.log(await nftVoting.getCandidates());
-
-  // 5) addr1 stimmt für Kandidat 1 ab
-  tx = await nftVoting.connect(addr1).vote(1); // Abstimmung von `addr1`
-  await tx.wait();
-  console.log(`Addr1 (${addr1.address}) hat für ${candidateNames[1]} abgestimmt`);
-
-  // 6) Ergebnisse abrufen
   console.log(await nftVoting.getCandidates());
 }
 
