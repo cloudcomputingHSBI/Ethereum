@@ -1,23 +1,23 @@
 const express = require('express');
 const authenticateToken = require('../middlewares/authenticateToken');
 const { PrismaClient } = require('@prisma/client');
-const { multiElectionVotingContract } = require('../eth/contracts'); // Blockchain-Contract importieren
+const { multiElectionVotingContract } = require('../eth/contracts');
 const prisma = new PrismaClient();
 
 const router = express.Router();
 
-// Route: Wahlen abrufen, für die der Nutzer zugelassen ist
 router.get('/elections', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Alle Wahlen, auf die der Nutzer Zugriff hat
+    // Alle Wahlen, für die der Nutzer zugelassen ist
     const elections = await prisma.election.findMany({
       where: {
-        OR: [
-          { password: null }, // Öffentlich, falls kein Passwort
-          { created_by: userId }, // Wahlen, die vom Nutzer erstellt wurden
-        ],
+        election_users: {
+          some: {
+            user_id: userId, 
+          },
+        },
       },
       select: {
         election_id: true,
@@ -26,7 +26,6 @@ router.get('/elections', authenticateToken, async (req, res) => {
         start_date: true,
         end_date: true,
         blockchain_id: true,
-        password: true,
         created_by: true,
         created_at: true,
       },
