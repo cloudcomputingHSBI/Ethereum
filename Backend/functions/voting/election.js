@@ -1,7 +1,7 @@
 const express = require('express');
 const authenticateToken = require('../middlewares/authenticateToken');
 const { PrismaClient } = require('@prisma/client');
-
+const { multiElectionVotingContract } = require('../eth/contracts'); // Blockchain-Contract importieren
 const prisma = new PrismaClient();
 
 const router = express.Router();
@@ -39,40 +39,89 @@ router.get('/elections', authenticateToken, async (req, res) => {
   }
 });
 
-// Route: Neue Wahl erstellen
+// Route: Neue Wahl erstellen (Blockchain und Datenbank)
 router.post('/createElection', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
+    const { name, description, formData, startdate, enddate, password, candidates } = req.body;
 
-    const { name, description, formData, startdate, enddate, password } = req.body;
+    if (!name || !candidates || !startdate || !enddate) {
+      return res.status(400).json({ error: 'Name, Kandidaten, Start- und Enddatum sind erforderlich.' });
+    }
 
+    // Blockchain-Transaktion ausführen
+    const startTime = Math.floor(new Date(startdate).getTime() / 1000);
+    const endTime = Math.floor(new Date(enddate).getTime() / 1000);
 
-    // Erstelle eine neue Wahl
+    const tx = await multiElectionVotingContract.createElection(
+      name,
+      candidates, // Array der Kandidatennamen
+      startTime,
+      endTime
+    );
+    await tx.wait(); // Auf Bestätigung der Transaktion warten
+
+    // Blockchain-ID der Wahl abrufen
+    const blockchainId = await multiElectionVotingContract.electionCount();
+
+    // Wahl in der Datenbank speichern
     const election = await prisma.election.create({
       data: {
         name,
         description,
-        start_date: startdate ? new Date(startdate) : null,
-        end_date: enddate ? new Date(enddate) : null,
+        start_date: new Date(startdate),
+        end_date: new Date(enddate),
         password: password || null,
         created_by: userId,
         form_schema: formData || {},
+        blockchain_id: blockchainId.toString(), // Blockchain-ID speichern
       },
     });
 
-    
-
-    res.json(election);
+    res.json({ success: true, election });
   } catch (error) {
     console.error('Fehler beim Erstellen der Wahl:', error);
     res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten.' });
   }
 });
 
-router.post('/elections/:id/details', authenticateToken, async (req, res) => {
+// Route: Wahldetails aus der Blockchain abrufen
+router.get('/elections/:id/details', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { password } = req.body;
+
+    // Blockchain-Details abrufen
+    const [name, startTime, endTime, candidates] = await multiElectionVotingContract.getElectionDetails(
+      id
+    );
+
+    const electionDetails = {
+      name,
+      startTime: startTime.toString(), // BigInt in String konvertieren
+      endTime: endTime.toString(),     // BigInt in String konvertieren
+      candidates: candidates.map((candidate) => ({
+        name: candidate[0],
+        votes: candidate[1].toString(), // BigInt in String konvertieren
+      })),
+    };
+
+    res.json({ success: true, electionDetails });
+  } catch (error) {
+    console.error('Fehler beim Abrufen der Wahldetails:', error);
+    res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten' });
+  }
+});
+
+
+// Route: Abstimmung durchführen
+router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { candidateIndex, tokenId } = req.body;
+
+    if (candidateIndex === undefined || !tokenId) {
+      return res.status(400).json({ error: 'Ungültige Parameter.' });
+    }
 
     const election = await prisma.election.findUnique({
       where: { election_id: parseInt(id, 10) },
@@ -82,15 +131,14 @@ router.post('/elections/:id/details', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Wahl nicht gefunden' });
     }
 
-    // Passwort validieren (falls erforderlich)
-    if (election.password && election.password !== password) {
-      return res.status(403).json({ error: 'Ungültiges Passwort' });
-    }
+    // Abstimmung auf der Blockchain durchführen
+    const tx = await multiElectionVotingContract.vote(election.blockchain_id, candidateIndex, tokenId);
+    await tx.wait();
 
-    res.json(election); // Rückgabe der Wahldaten
+    res.json({ success: true, message: 'Abstimmung erfolgreich.' });
   } catch (error) {
-    console.error('Fehler beim Abrufen der Wahldetails:', error);
-    res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten' });
+    console.error('Fehler beim Abstimmen:', error);
+    res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten.' });
   }
 });
 
