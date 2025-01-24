@@ -23,7 +23,7 @@ app.use(express.json());
 app.post('/registerUser', registerUser);
 app.post('/loginUser', loginUser);
 app.use('/api', authenticateToken , electionRoutes);
-app.use('/users', authenticateToken , userRoutes);
+// app.use('/users', authenticateToken , userRoutes);
 
 // Exportiere die App für Google Cloud Functions
 const functionsFramework = require("@google-cloud/functions-framework");
