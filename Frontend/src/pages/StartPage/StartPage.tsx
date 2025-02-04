@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Form, Button, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Modal, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import { getAccessibleElections, getElectionDetails } from '../../api/apiService';
 import { Election } from '../../types';
 import { ReactFormGenerator } from 'react-form-builder2';
@@ -14,7 +14,6 @@ const StartPage: React.FC = () => {
   const [showVotingModal, setShowVotingModal] = useState(false);
   const [selectedElection, setSelectedElection] = useState<Election | null>(null);
   const [formSchema, setFormSchema] = useState<any>(null);
-  const [password, setPassword] = useState('');
 
   useEffect(() => {
     const fetchElections = async () => {
@@ -41,13 +40,13 @@ const StartPage: React.FC = () => {
           ? 'Beendet'
           : 'Laufend'
         : 'Unbekannt';
-  
+
     setSelectedElection({
       ...election,
       description: election.description || 'Keine Beschreibung verfügbar.',
-      status, // Status setzen
+      status,
     });
-  
+
     setShowDetailsModal(true);
   };
 
@@ -57,28 +56,15 @@ const StartPage: React.FC = () => {
   };
 
   const handleJoinElection = async (election: Election) => {
-    let enteredPassword = '';
-  
-    if (election.password) {
-      // Passwortvalidierung
-      enteredPassword = prompt('Bitte geben Sie das Passwort ein:') || '';
-      if (!enteredPassword) {
-        alert('Kein Passwort eingegeben!');
-        return;
-      }
-    }
-  
     try {
-      console.log('Verwendetes Passwort:', enteredPassword);
-      const electionDetails = await getElectionDetails(election.election_id, enteredPassword);
+      const electionDetails = await getElectionDetails(election.election_id);
       setFormSchema(electionDetails.form_schema);
       setSelectedElection(election);
       setShowVotingModal(true);
     } catch (error) {
-      alert('Ungültiges Passwort oder Fehler beim Abrufen der Wahldaten.');
+      alert('Fehler beim Abrufen der Wahldaten.');
     }
   };
-  
 
   const handleCloseVotingModal = () => {
     setShowVotingModal(false);
@@ -135,25 +121,6 @@ const StartPage: React.FC = () => {
           filteredElections.map((election) => (
             <Col md={4} className="mb-4" key={election.election_id}>
               <Card className="shadow-sm position-relative">
-                {election.password && (
-                  <OverlayTrigger
-                    placement="top"
-                    overlay={<Tooltip>Diese Wahl ist passwortgeschützt.</Tooltip>}
-                  >
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '10px',
-                        right: '10px',
-                        color: 'red',
-                        fontSize: '1.5rem',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      🔒
-                    </div>
-                  </OverlayTrigger>
-                )}
                 <Card.Body>
                   <Card.Title>{election.name}</Card.Title>
                   <Card.Text>{election.description || 'Keine Beschreibung verfügbar.'}</Card.Text>
@@ -215,9 +182,9 @@ const StartPage: React.FC = () => {
             <ReactFormGenerator
               data={formSchema}
               onSubmit={handleFormSubmit}
-              action_name=' ' // Dummy-Wert, da keine echte Aktion erforderlich ist
-              form_action="" // Dummy-Wert, da keine echte Aktion erforderlich ist
-              form_method="POST" // Standardwert für Formulare
+              action_name="Abstimmen"
+              form_action=""
+              form_method="POST"
             />
           ) : (
             <p>Formulardaten werden geladen...</p>
@@ -227,14 +194,10 @@ const StartPage: React.FC = () => {
           <Button variant="secondary" onClick={handleCloseVotingModal} style={{ alignSelf: 'flex-start' }}>
             Abbrechen
           </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              // Der `onSubmit`-Handler wird hier explizit aufgerufen
-              const form = document.querySelector('form');
-              form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-            }}
-          >
+          <Button variant="primary" onClick={() => {
+            const form = document.querySelector('form');
+            form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+          }}>
             Abstimmen
           </Button>
         </Modal.Footer>

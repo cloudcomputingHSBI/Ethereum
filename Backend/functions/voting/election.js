@@ -42,26 +42,24 @@ router.get('/elections', authenticateToken, async (req, res) => {
 router.post('/createElection', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, description, formData, startdate, enddate, password, candidates } = req.body;
+    const { name, description, formData, startdate, enddate } = req.body;
 
-    if (!name || !candidates || !startdate || !enddate) {
-      return res.status(400).json({ error: 'Name, Kandidaten, Start- und Enddatum sind erforderlich.' });
-    }
+    
 
     // Blockchain-Transaktion ausführen
     const startTime = Math.floor(new Date(startdate).getTime() / 1000);
     const endTime = Math.floor(new Date(enddate).getTime() / 1000);
 
-    const tx = await multiElectionVotingContract.createElection(
-      name,
-      candidates, // Array der Kandidatennamen
-      startTime,
-      endTime
-    );
-    await tx.wait(); // Auf Bestätigung der Transaktion warten
+    // const tx = await multiElectionVotingContract.createElection(
+    //   name,
+    //   candidates, // Array der Kandidatennamen
+    //   startTime,
+    //   endTime
+    // );
+    // await tx.wait(); // Auf Bestätigung der Transaktion warten
 
-    // Blockchain-ID der Wahl abrufen
-    const blockchainId = await multiElectionVotingContract.electionCount();
+    // // Blockchain-ID der Wahl abrufen
+    // const blockchainId = await multiElectionVotingContract.electionCount();
 
     // Wahl in der Datenbank speichern
     const election = await prisma.election.create({
@@ -70,10 +68,9 @@ router.post('/createElection', authenticateToken, async (req, res) => {
         description,
         start_date: new Date(startdate),
         end_date: new Date(enddate),
-        password: password || null,
         created_by: userId,
         form_schema: formData || {},
-        blockchain_id: blockchainId.toString(), // Blockchain-ID speichern
+        // blockchain_id: blockchainId.toString(), // Blockchain-ID speichern
       },
     });
 
