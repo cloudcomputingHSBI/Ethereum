@@ -50,6 +50,14 @@ class Demobar extends React.Component {
       if (this.state.isSaving) return;
       this.setState({ isSaving: true });
 
+      const radioButtons = formData.filter((item) => item.element === 'RadioButtons');
+      if (radioButtons.length > 1) {
+        alert('Es darf nur eine Umfrage mit einem einzigen Multiple-Choice-Feld erstellt werden!');
+        this.setState({ isSaving: false });
+        this.closePreview();
+        return;
+      }
+
       await saveForm(
         this.state.formName,
         this.state.formDescription,
