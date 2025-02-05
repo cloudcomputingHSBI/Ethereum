@@ -153,16 +153,17 @@ router.get('/elections/:id/details', authenticateToken, async (req, res) => {
   }
 });
 
-// Route: Abstimmung durchführen
 router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { candidateIndex, tokenId } = req.body;
+    const { candidateIndex } = req.body;
+    const userId = req.user.id;
 
-    if (candidateIndex === undefined || !tokenId) {
+    if (candidateIndex === undefined) {
       return res.status(400).json({ error: 'Ungültige Parameter.' });
     }
 
+    // Wahl aus der Datenbank abrufen
     const election = await prisma.election.findUnique({
       where: { election_id: parseInt(id, 10) },
     });
@@ -171,21 +172,48 @@ router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Wahl nicht gefunden' });
     }
 
-    if (election.access_type === 'restricted') {
-      const isAuthorized = await prisma.election_users.findFirst({
-        where: { election_id: parseInt(id, 10), user_id: userId },
-      });
+    // Nutzer-Wallet abrufen
+    const userWallet = await prisma.wallets.findFirst({
+      where: { user_id: userId },
+      select: { wallet_address: true }
+    });
 
-      if (!isAuthorized) {
-        return res.status(403).json({ error: 'Sie sind nicht berechtigt, an dieser Wahl teilzunehmen.' });
-      }
+    if (!userWallet) {
+      return res.status(403).json({ error: 'Keine Wallet gefunden. Registrierung erforderlich.' });
     }
 
-    // // Abstimmung auf der Blockchain durchführen
-    // const tx = await multiElectionVotingContract.vote(election.blockchain_id, candidateIndex, tokenId);
-    // await tx.wait();
+    let tokenId;
 
-    res.json({ success: true, message: 'Abstimmung erfolgreich.' });
+    // Prüfen, ob die Wahl "restricted" oder "open" ist
+    if (election.access_type === 'restricted') {
+      // GESCHÜTZTE WAHLEN (Nutzer muss NFT bereits besitzen)
+      try {
+        tokenId = await myNftContract.tokenOfOwnerByIndex(userWallet.wallet_address, 0);
+      } catch (error) {
+        return res.status(403).json({ error: 'Du besitzt kein NFT für diese Wahl.' });
+      }
+    } else {
+      // OFFENE WAHLEN (NFT muss vorher gemintet werden)
+      console.log(`Minting NFT für ${userWallet.wallet_address} für Wahl ${id}`);
+      const mintTx = await myNftContract.mint(userWallet.wallet_address, id);
+      await mintTx.wait(); // Warten, bis das NFT in der Blockchain bestätigt wurde
+
+      // Neue NFT-ID abrufen
+      tokenId = await myNftContract.tokenOfOwnerByIndex(userWallet.wallet_address, 0);
+    }
+
+    // Sicherstellen, dass das NFT zur Wahl gehört
+    const nftElectionId = await myNftContract.getElectionId(tokenId);
+    if (nftElectionId.toString() !== election.blockchain_id.toString()) {
+      return res.status(403).json({ error: 'Dieses NFT ist nicht für diese Wahl gültig.' });
+    }
+
+    // 5️⃣ Stimme auf der Blockchain abgeben
+    const tx = await multiElectionVotingContract.vote(election.blockchain_id, candidateIndex, tokenId);
+    await tx.wait();
+
+    res.json({ success: true, message: 'Abstimmung erfolgreich!', transaction: tx.hash });
+
   } catch (error) {
     console.error('Fehler beim Abstimmen:', error);
     res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten.' });

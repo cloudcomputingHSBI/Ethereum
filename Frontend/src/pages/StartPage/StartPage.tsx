@@ -130,39 +130,59 @@ const StartPage: React.FC = () => {
 
       <Row>
         {filteredElections.length > 0 ? (
-          filteredElections.map((election) => (
-            <Col md={4} className="mb-4" key={election.election_id}>
-              <Card className="shadow-sm position-relative">
-                <Card.Body>
-                  <Card.Title>{election.name}</Card.Title>
-                  <Card.Text>{election.description || 'Keine Beschreibung verfügbar.'}</Card.Text>
-                  <Card.Text className="text-muted">
-                    Status: {election.start_date && election.end_date
-                      ? new Date(election.start_date) > new Date()
-                        ? 'Geplant'
-                        : new Date(election.end_date) < new Date()
-                        ? 'Beendet'
-                        : 'Laufend'
-                      : 'Unbekannt'}
-                  </Card.Text>
-                  <div className="d-flex justify-content-between">
-                    <Button variant="secondary" onClick={() => handleShowDetailsModal(election)}>
-                      Details 
-                    </Button>
-                    <Button variant="primary" onClick={() => handleJoinElection(election)}>
-                      Abstimmen
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))
+          filteredElections.map((election) => {
+            // Sicherstellen, dass die Daten existieren
+            const startDate = election.start_date ? new Date(election.start_date) : null;
+            const endDate = election.end_date ? new Date(election.end_date) : null;
+            const now = new Date();
+
+            // Status bestimmen
+            const isPlanned = startDate ? startDate > now : false; 
+            const isEnded = endDate ? endDate < now : false;
+            const isOngoing = !isPlanned && !isEnded;
+
+            return (
+              <Col md={4} className="mb-4" key={election.election_id}>
+                <Card className="shadow-sm position-relative">
+                  <Card.Body>
+                    <Card.Title>{election.name}</Card.Title>
+                    <Card.Text>{election.description || 'Keine Beschreibung verfügbar.'}</Card.Text>
+
+                    <Card.Text className="text-muted">
+                      Status: {isPlanned ? 'Geplant' : isEnded ? 'Beendet' : 'Laufend'}
+                    </Card.Text>
+
+                    {/* Falls die Wahl beendet ist, zeige eine grüne Meldung an */}
+                    {isEnded && (
+                      <p className="text-success">
+                        <strong>✔ Ergebnisse stehen zur Ansicht bereit</strong>
+                      </p>
+                    )}
+
+                    <div className="d-flex justify-content-between">
+                      <Button variant="secondary" onClick={() => handleShowDetailsModal(election)}>
+                        Details 
+                      </Button>
+                      <Button 
+                        variant={isOngoing ? 'primary' : 'secondary'}
+                        onClick={() => handleJoinElection(election)}
+                        disabled={!isOngoing}
+                      >
+                        Abstimmen
+                      </Button>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            );
+          })
         ) : (
           <Col>
             <p className="text-muted">Keine Wahlen gefunden.</p>
           </Col>
         )}
       </Row>
+
 
       {/* Modal für Wahldetails */}
       <Modal show={showDetailsModal} onHide={handleCloseDetailsModal}>
