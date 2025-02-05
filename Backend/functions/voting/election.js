@@ -108,7 +108,7 @@ router.post('/createElection', authenticateToken, async (req, res) => {
       );
     }
 
-    res.json({ success: true, election, blockchainId });
+    res.json({ success: true, election, blockchainId: blockchainId.toString() });
   } catch (error) {
     console.error('Fehler beim Erstellen der Wahl:', error);
     res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten.' });
