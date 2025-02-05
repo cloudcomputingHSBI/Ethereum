@@ -1,11 +1,12 @@
 {
   "devDependencies": {
-    "prisma": "^6.2.0"
+    "prisma": "^6.3.1"
   },
   "dependencies": {
     "@google-cloud/functions-framework": "^3.4.5",
     "@prisma/client": "^6.2.0",
     "@types/cors": "^2.8.17",
+    "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -16,5 +17,6 @@
   },
   "scripts": {
     "start": "functions-framework --target=app"
+    
   }
 }

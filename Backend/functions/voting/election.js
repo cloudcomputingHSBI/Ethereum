@@ -1,7 +1,14 @@
-const express = require('express');
-const authenticateToken = require('../middlewares/authenticateToken');
-const { PrismaClient } = require('@prisma/client');
-const { multiElectionVotingContract } = require('../eth/contracts');
+//import gatewayApiClient from '../../gatewayApiClient.js';
+import express from 'express';
+import authenticateToken from '../middlewares/authenticateToken.js';
+import { PrismaClient } from '@prisma/client';
+import gatewayApiClient from '../../gatewayApiClient.js';
+
+// const express = require('express');
+// const authenticateToken = require('../middlewares/authenticateToken');
+// const { PrismaClient } = require('@prisma/client');
+// const gatewayApiClient = require('../../gatewayApiClient');
+// //const gatewayApiClient = require('../../gatewayApiClient');
 const prisma = new PrismaClient();
 
 const router = express.Router();
@@ -15,7 +22,7 @@ router.get('/elections', authenticateToken, async (req, res) => {
       where: {
         election_users: {
           some: {
-            user_id: userId, 
+            user_id: userId,
           },
         },
       },
@@ -44,22 +51,11 @@ router.post('/createElection', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const { name, description, formData, startdate, enddate } = req.body;
 
-    
+
 
     // Blockchain-Transaktion ausführen
-    const startTime = Math.floor(new Date(startdate).getTime() / 1000);
-    const endTime = Math.floor(new Date(enddate).getTime() / 1000);
-
-    // const tx = await multiElectionVotingContract.createElection(
-    //   name,
-    //   candidates, // Array der Kandidatennamen
-    //   startTime,
-    //   endTime
-    // );
-    // await tx.wait(); // Auf Bestätigung der Transaktion warten
-
-    // // Blockchain-ID der Wahl abrufen
-    // const blockchainId = await multiElectionVotingContract.electionCount();
+    const startTime = Math.floor(new Date(startdate).getTime());
+    const endTime = Math.floor(new Date(enddate).getTime());
 
     // Wahl in der Datenbank speichern
     const election = await prisma.election.create({
@@ -73,8 +69,25 @@ router.post('/createElection', authenticateToken, async (req, res) => {
         // blockchain_id: blockchainId.toString(), // Blockchain-ID speichern
       },
     });
+    
+    const radioButtons = formData.filter((item) => item.element === 'RadioButtons');
+    const options = radioButtons[0].options.map(option => option.text);
 
-    res.json({ success: true, election });
+    const options_parse = options.join(',');
+    const election_id = String(election.election_id);
+    console.log(startTime, endTime);
+    const start_time_str = String(startTime);
+    const end_time_str = String(endTime);
+    
+    
+    const gatwayResponse = await gatewayApiClient.post('/api/createElection', {
+      election_id,
+      options_parse,
+      start_time_str,
+      end_time_str,
+    });
+
+    res.json({ success: true, election }); //gatewayResponse ?
   } catch (error) {
     console.error('Fehler beim Erstellen der Wahl:', error);
     res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten.' });
@@ -113,11 +126,12 @@ router.get('/elections/:id/details', authenticateToken, async (req, res) => {
 router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { candidateIndex, tokenId } = req.body;
+    //const { candidateIndex, tokenId } = req.body;
+    const {formData} = req.body;
 
-    if (candidateIndex === undefined || !tokenId) {
-      return res.status(400).json({ error: 'Ungültige Parameter.' });
-    }
+    // if (candidateIndex === undefined || !tokenId) {
+    //   return res.status(400).json({ error: 'Ungültige Parameter.' });
+    // }
 
     const election = await prisma.election.findUnique({
       where: { election_id: parseInt(id, 10) },
@@ -127,9 +141,20 @@ router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Wahl nicht gefunden' });
     }
 
+
+    const radioButtons = formData.filter((item) => item.element === 'RadioButtons');
+    const selectedOption = radioButtons[0].options.map(option => option.selected);
+    const selectedTest = selectedOption ? selectedOption.text : null;
+
+    console.log(selectedTest)
+
+    const election_id = String(election.election_id);
     // Abstimmung auf der Blockchain durchführen
-    const tx = await multiElectionVotingContract.vote(election.blockchain_id, candidateIndex, tokenId);
-    await tx.wait();
+    const gatewayResponse = await gatewayApiClient.post('/api/vote', {
+      election_id,
+      options_parse,
+    });
+
 
     res.json({ success: true, message: 'Abstimmung erfolgreich.' });
   } catch (error) {
@@ -138,4 +163,4 @@ router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

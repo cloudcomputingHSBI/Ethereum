@@ -30,3 +30,10 @@ export const getElectionDetails = async (electionId: number, password?: string):
   });
   return response.data;
 };
+
+
+// ????????????????????
+export const castVote = async (electionId: number, formData: any): Promise<void> => {
+  const response = await apiClient.post(`/api/elections/${electionId}/vote`, { formData });
+  return response.data;
+};
