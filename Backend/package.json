@@ -17,7 +17,6 @@
   },
   "scripts": {
     "start": "functions-framework --target=app"
-    
   },
   "type": "module"
 }
