@@ -40,11 +40,9 @@ export const saveForm = async (
   return response.data;
 };
 
-export const getElectionDetails = async (electionId: number, password?: string): Promise<Election> => {
-  const response = await apiClient.post<Election>(`/api/elections/${electionId}/details`, {
-    password,
-  });
-  return response.data;
+export const getElectionDetails = async (electionId: number): Promise<any> => {
+  const response = await apiClient.get<any>(`/api/elections/${electionId}/details`);
+  return response.data.election;
 };
 
 

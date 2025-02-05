@@ -28,8 +28,13 @@ const StartPage: React.FC = () => {
       }
     };
 
+    const saveButton = document.querySelector('.btn-toolbar') as HTMLElement | null;
+    if (saveButton) {
+      saveButton.style.display = 'none';  
+    }
+
     fetchElections();
-  }, []);
+  }, [showVotingModal]);
 
   const handleShowDetailsModal = async (election: Election) => {
     try {
