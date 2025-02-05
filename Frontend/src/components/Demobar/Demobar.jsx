@@ -2,6 +2,7 @@ import React from 'react';
 import { ReactFormGenerator, ElementStore } from 'react-form-builder2';
 import { saveForm } from '../../api/apiService';
 import { getUsers } from '../../api/apiService';
+import styles from './Demobar.module.css';
 
 class Demobar extends React.Component {
   constructor(props) {
