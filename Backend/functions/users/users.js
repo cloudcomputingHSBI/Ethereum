@@ -1,6 +1,7 @@
-const express = require('express');
-const authenticateToken = require('../middlewares/authenticateToken');
-const { PrismaClient } = require('@prisma/client');
+import express from 'express';
+import authenticateToken from '../middlewares/authenticateToken.js';
+import { PrismaClient } from '@prisma/client';
+
 
 const prisma = new PrismaClient(); 
 
@@ -26,4 +27,5 @@ router.get('/allUsers', async (req, res) => {
   }
 });
 
-module.exports = router;
+// module.exports = router;
+export default router; // ESM-Export

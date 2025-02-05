@@ -1,12 +1,11 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-
 const JWT_SECRET = '12345';
 
-exports.loginUser = async (req, res) => {
+const loginUser = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).send({ error: 'Method not allowed' });
   }
@@ -50,3 +49,5 @@ exports.loginUser = async (req, res) => {
     res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten.' });
   }
 };
+
+export { loginUser }; // ESM-Export
