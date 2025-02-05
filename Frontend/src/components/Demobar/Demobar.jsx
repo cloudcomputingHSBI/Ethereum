@@ -1,6 +1,8 @@
 import React from 'react';
 import { ReactFormGenerator, ElementStore } from 'react-form-builder2';
 import { saveForm } from '../../api/apiService';
+import { getUsers } from '../../api/apiService';
+import styles from './Demobar.module.css';
 
 class Demobar extends React.Component {
   constructor(props) {
@@ -19,12 +21,35 @@ class Demobar extends React.Component {
       isProtected: false,
       formNameError: '',
       isSaving: false,
+      accessType: 'open',
+      allowedUsers: [],
     };
 
     this._onUpdate = this._onChange.bind(this);
   }
 
+  handleUserSelection(userId) {
+    this.setState((prevState) => {
+      const { allowedUsers } = prevState;
+      return {
+        allowedUsers: allowedUsers.includes(userId)
+          ? allowedUsers.filter((id) => id !== userId)
+          : [...allowedUsers, userId],
+      };
+    });
+  }
+
+  async loadUsers() {
+    try {
+      const users = await getUsers();
+      this.setState({ users });
+    } catch (error) {
+      console.error('Fehler beim Laden der Benutzer:', error);
+    }
+  }
+
   componentDidMount() {
+    this.loadUsers();
     ElementStore.subscribe((state) => this._onUpdate(state.data));
   }
 
@@ -51,11 +76,25 @@ class Demobar extends React.Component {
       this.setState({ isSaving: true });
 
       const radioButtons = formData.filter((item) => item.element === 'RadioButtons');
-      if (radioButtons.length > 1) {
-        alert('Es darf nur eine Umfrage mit einem einzigen Multiple-Choice-Feld erstellt werden!');
-        this.setState({ isSaving: false });
-        this.closePreview();
-        return;
+      switch (radioButtons.length) {
+        case 0:
+          alert('Es muss mindestens eine Umfrage mit einem einzigen Multiple-Choice-Feld erstellt werden!');
+          this.setState({ isSaving: false });
+          this.closePreview();
+          return;
+        case 1:
+          if (radioButtons[0].options.length < 2) {
+            alert('Es müssen mindestens zwei Antwortmöglichkeiten für das Multiple-Choice-Feld erstellt werden!');
+            this.setState({ isSaving: false });
+            this.closePreview();
+            return;
+          }
+          break;
+        default:
+          alert('Es darf nur eine Umfrage mit einem einzigen Multiple-Choice-Feld erstellt werden!');
+          this.setState({ isSaving: false });
+          this.closePreview();
+          return;
       }
 
       await saveForm(
@@ -64,7 +103,8 @@ class Demobar extends React.Component {
         formData,
         this.state.startdate,
         this.state.enddate,
-        this.state.isProtected ? this.state.password : null
+        this.state.accessType,
+        this.state.accessType === 'restricted' ? this.state.allowedUsers : []
       );
 
       alert('Wahl erfolgreich gespeichert!');
@@ -239,24 +279,25 @@ class Demobar extends React.Component {
                     />
                   </div>
                   <div className="form-group">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={this.state.isProtected}
-                        onChange={(e) => this.setState({ isProtected: e.target.checked })}
-                      />
-                      Geschützte Wahl
-                    </label>
+                    <label>Zugriffsart</label>
+                    <select className="form-control" value={this.state.accessType} onChange={(e) => this.setState({ accessType: e.target.value })}>
+                      <option value="open">Offen (alle Nutzer)</option>
+                      <option value="restricted">Eingeschränkt (nur ausgewählte Nutzer)</option>
+                    </select>
                   </div>
-                  {this.state.isProtected && (
+                  {this.state.accessType === 'restricted' && (
                     <div className="form-group">
-                      <label>Passwort</label>
-                      <input
-                        type="password"
-                        className="form-control"
-                        value={this.state.password}
-                        onChange={(e) => this.setState({ password: e.target.value })}
-                      />
+                      <label>Berechtigte Nutzer:</label>
+                      <ul className="list-group">
+                        {this.state.users.map((user) => (
+                          <li key={user.user_id} 
+                              className={`list-group-item ${this.state.allowedUsers?.includes(user.user_id) ? 'active' : ''}`} 
+                              onClick={() => this.handleUserSelection(user.user_id)}
+                              style={{ cursor: 'pointer' }}>
+                            {user.name} ({user.email})
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </div>

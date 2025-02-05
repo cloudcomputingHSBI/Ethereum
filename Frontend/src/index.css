@@ -101,3 +101,7 @@ button {
 .register-button:hover {
   background-color: #5a6268; /* Dunklere Variante */
 }
+
+.btn-toolbar {
+  display: none;
+}

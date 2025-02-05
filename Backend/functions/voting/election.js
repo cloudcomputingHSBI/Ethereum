@@ -13,18 +13,21 @@ const prisma = new PrismaClient();
 
 const router = express.Router();
 
+// Route: Wahlen abrufen (nur die zugänglichen)
 router.get('/elections', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Alle Wahlen, für die der Nutzer zugelassen ist
+    // Wahlen abrufen, die entweder offen oder für den Nutzer eingeschränkt zugänglich sind
     const elections = await prisma.election.findMany({
       where: {
-        election_users: {
-          some: {
-            user_id: userId,
-          },
-        },
+        OR: [
+          { access_type: 'open' },
+          { 
+            access_type: 'restricted',
+            election_users: { some: { user_id: userId } }
+          }
+        ]
       },
       select: {
         election_id: true,
@@ -35,6 +38,7 @@ router.get('/elections', authenticateToken, async (req, res) => {
         blockchain_id: true,
         created_by: true,
         created_at: true,
+        access_type: true,
       },
     });
 
@@ -45,11 +49,12 @@ router.get('/elections', authenticateToken, async (req, res) => {
   }
 });
 
+
 // Route: Neue Wahl erstellen (Blockchain und Datenbank)
 router.post('/createElection', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, description, formData, startdate, enddate } = req.body;
+    const { name, description, formData, startdate, enddate, access_type, allowedUsers } = req.body;
 
 
 
@@ -66,9 +71,20 @@ router.post('/createElection', authenticateToken, async (req, res) => {
         end_date: new Date(enddate),
         created_by: userId,
         form_schema: formData || {},
+        access_type,
         // blockchain_id: blockchainId.toString(), // Blockchain-ID speichern
       },
     });
+
+    // Falls restricted, die berechtigten Nutzer in election_users speichern
+    if (access_type === 'restricted' && allowedUsers && allowedUsers.length > 0) {
+      await prisma.election_users.createMany({
+        data: allowedUsers.map(userId => ({
+          election_id: election.election_id,
+          user_id: userId,
+        })),
+      });
+    }
     
     const radioButtons = formData.filter((item) => item.element === 'RadioButtons');
     const options = radioButtons[0].options.map(option => option.text);
@@ -94,33 +110,43 @@ router.post('/createElection', authenticateToken, async (req, res) => {
   }
 });
 
-// Route: Wahldetails aus der Blockchain abrufen
 router.get('/elections/:id/details', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Blockchain-Details abrufen
-    const [name, startTime, endTime, candidates] = await multiElectionVotingContract.getElectionDetails(
-      id
-    );
+    // Wahldetails aus der Datenbank abrufen
+    const election = await prisma.election.findUnique({
+      where: { election_id: parseInt(id, 10) },
+      include: { 
+        election_users: true // Lädt alle berechtigten Benutzer für restricted Wahlen
+      },
+    });
 
+    if (!election) {
+      return res.status(404).json({ error: 'Wahl nicht gefunden' });
+    }
+
+    // Wahldetails in ein Objekt packen
     const electionDetails = {
-      name,
-      startTime: startTime.toString(), // BigInt in String konvertieren
-      endTime: endTime.toString(),     // BigInt in String konvertieren
-      candidates: candidates.map((candidate) => ({
-        name: candidate[0],
-        votes: candidate[1].toString(), // BigInt in String konvertieren
-      })),
+      election_id: election.election_id,
+      name: election.name,
+      description: election.description,
+      start_date: election.start_date,
+      end_date: election.end_date,
+      blockchain_id: election.blockchain_id,
+      form_schema: election.form_schema,
+      access_type: election.access_type,
+      allowedUsers: election.access_type === 'restricted' 
+        ? election.election_users.map((eu) => eu.user_id) 
+        : [],
     };
 
-    res.json({ success: true, electionDetails });
+    res.json({ success: true, election: electionDetails });
   } catch (error) {
     console.error('Fehler beim Abrufen der Wahldetails:', error);
     res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten' });
   }
 });
-
 
 // Route: Abstimmung durchführen
 router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
@@ -149,11 +175,21 @@ router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
     console.log(selectedTest)
 
     const election_id = String(election.election_id);
-    // Abstimmung auf der Blockchain durchführen
-    const gatewayResponse = await gatewayApiClient.post('/api/vote', {
+    if (election.access_type === 'restricted') {
+      const isAuthorized = await prisma.election_users.findFirst({
+        where: { election_id: parseInt(id, 10), user_id: userId },
+      });
+
+      if (!isAuthorized) {
+        return res.status(403).json({ error: 'Sie sind nicht berechtigt, an dieser Wahl teilzunehmen.' });
+      }
+    }
+
+    // // Abstimmung auf der Blockchain durchführen
+    // const gatewayResponse = await gatewayApiClient.post('/api/vote', {
       election_id,
       options_parse,
-    });
+    // });
 
 
     res.json({ success: true, message: 'Abstimmung erfolgreich.' });

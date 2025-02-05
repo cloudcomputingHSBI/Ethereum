@@ -31,23 +31,29 @@ const StartPage: React.FC = () => {
     fetchElections();
   }, []);
 
-  const handleShowDetailsModal = (election: Election) => {
-    const status =
-      election.start_date && election.end_date
-        ? new Date(election.start_date) > new Date()
-          ? 'Geplant'
-          : new Date(election.end_date) < new Date()
-          ? 'Beendet'
-          : 'Laufend'
-        : 'Unbekannt';
-
-    setSelectedElection({
-      ...election,
-      description: election.description || 'Keine Beschreibung verfügbar.',
-      status,
-    });
-
-    setShowDetailsModal(true);
+  const handleShowDetailsModal = async (election: Election) => {
+    try {
+      const electionDetails = await getElectionDetails(election.election_id);
+  
+      const status =
+        election.start_date && election.end_date
+          ? new Date(election.start_date) > new Date()
+            ? 'Geplant'
+            : new Date(election.end_date) < new Date()
+            ? 'Beendet'
+            : 'Laufend'
+          : 'Unbekannt';
+  
+      setSelectedElection({
+        ...electionDetails,
+        description: electionDetails.description || 'Keine Beschreibung verfügbar.',
+        status,
+      });
+  
+      setShowDetailsModal(true);
+    } catch (error) {
+      alert('Fehler beim Abrufen der Wahldetails.');
+    }
   };
 
   const handleCloseDetailsModal = () => {
@@ -58,6 +64,7 @@ const StartPage: React.FC = () => {
   const handleJoinElection = async (election: Election) => {
     try {
       const electionDetails = await getElectionDetails(election.election_id);
+      console.log('Wahldetails:', electionDetails);
       setFormSchema(electionDetails.form_schema);
       setSelectedElection(election);
       setShowVotingModal(true);
@@ -172,7 +179,6 @@ const StartPage: React.FC = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal für Abstimmung */}
       <Modal show={showVotingModal} onHide={handleCloseVotingModal} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Abstimmen: {selectedElection?.name}</Modal.Title>

@@ -24,9 +24,17 @@ const CreateSurvey = () => {
       'Camera',
       'File Upload',
       'Website',
+      'Two Column Row',
+      'Three Columns Row',
       'Six Columns Row',
       'Five Columns Row',
       'Four Columns Row',
+      'Rating',
+      'Dropdown',
+      'Checkboxes',
+      'Multi-line Input',
+      'Date',
+      'Range',
     ];
 
     const toolbar = document.querySelector('.react-form-builder-toolbar');
