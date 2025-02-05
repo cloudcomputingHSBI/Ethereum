@@ -97,33 +97,43 @@ router.post('/createElection', authenticateToken, async (req, res) => {
   }
 });
 
-// Route: Wahldetails aus der Blockchain abrufen
 router.get('/elections/:id/details', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Blockchain-Details abrufen
-    const [name, startTime, endTime, candidates] = await multiElectionVotingContract.getElectionDetails(
-      id
-    );
+    // Wahldetails aus der Datenbank abrufen
+    const election = await prisma.election.findUnique({
+      where: { election_id: parseInt(id, 10) },
+      include: { 
+        election_users: true // Lädt alle berechtigten Benutzer für restricted Wahlen
+      },
+    });
 
+    if (!election) {
+      return res.status(404).json({ error: 'Wahl nicht gefunden' });
+    }
+
+    // Wahldetails in ein Objekt packen
     const electionDetails = {
-      name,
-      startTime: startTime.toString(), // BigInt in String konvertieren
-      endTime: endTime.toString(),     // BigInt in String konvertieren
-      candidates: candidates.map((candidate) => ({
-        name: candidate[0],
-        votes: candidate[1].toString(), // BigInt in String konvertieren
-      })),
+      election_id: election.election_id,
+      name: election.name,
+      description: election.description,
+      start_date: election.start_date,
+      end_date: election.end_date,
+      blockchain_id: election.blockchain_id,
+      form_schema: election.form_schema,
+      access_type: election.access_type,
+      allowedUsers: election.access_type === 'restricted' 
+        ? election.election_users.map((eu) => eu.user_id) 
+        : [],
     };
 
-    res.json({ success: true, electionDetails });
+    res.json({ success: true, election: electionDetails });
   } catch (error) {
     console.error('Fehler beim Abrufen der Wahldetails:', error);
     res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten' });
   }
 });
-
 
 // Route: Abstimmung durchführen
 router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
