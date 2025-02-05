@@ -18,6 +18,7 @@ model election {
   start_date     DateTime?        @db.Timestamp(6)
   end_date       DateTime?        @db.Timestamp(6)
   blockchain_id  String?
+  access_type    String?          @default("open") @db.VarChar(20)
   users          users?           @relation(fields: [created_by], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
   election_users election_users[]
 }
