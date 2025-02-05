@@ -1,8 +1,9 @@
 const express = require('express');
 const authenticateToken = require('../middlewares/authenticateToken');
 const { PrismaClient } = require('@prisma/client');
-const { multiElectionVotingContract } = require('../eth/contracts');
 const prisma = new PrismaClient();
+const { myNftContract, multiElectionVotingContract } = require('../eth/contracts');
+
 
 const router = express.Router();
 
@@ -43,28 +44,28 @@ router.get('/elections', authenticateToken, async (req, res) => {
 });
 
 
-// Route: Neue Wahl erstellen (Blockchain und Datenbank)
 router.post('/createElection', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { name, description, formData, startdate, enddate, access_type, allowedUsers } = req.body;
 
-    
-
-    // Blockchain-Transaktion ausführen
+    // Wahlparameter vorbereiten
     const startTime = Math.floor(new Date(startdate).getTime() / 1000);
     const endTime = Math.floor(new Date(enddate).getTime() / 1000);
 
-    // const tx = await multiElectionVotingContract.createElection(
-    //   name,
-    //   candidates, // Array der Kandidatennamen
-    //   startTime,
-    //   endTime
-    // );
-    // await tx.wait(); // Auf Bestätigung der Transaktion warten
+    // Kandidaten aus formData extrahieren
+    const radioButtons = formData.filter((item) => item.element === 'RadioButtons');
+    const candidates = radioButtons[0].options.map(option => option.text);
 
-    // // Blockchain-ID der Wahl abrufen
-    // const blockchainId = await multiElectionVotingContract.electionCount();
+
+    //Wahl auf der Blockchain erstellen
+    const tx = await multiElectionVotingContract.createElection(name, candidates, startTime, endTime);
+    await tx.wait(); // Transaktion abwarten
+
+    // Blockchain-ID abrufen
+    const blockchainId = await multiElectionVotingContract.electionCount();
+
+    console.log('Blockchain-ID:', blockchainId.toString());
 
     // Wahl in der Datenbank speichern
     const election = await prisma.election.create({
@@ -76,11 +77,11 @@ router.post('/createElection', authenticateToken, async (req, res) => {
         created_by: userId,
         form_schema: formData || {},
         access_type,
-        // blockchain_id: blockchainId.toString(), // Blockchain-ID speichern
+        blockchain_id: blockchainId.toString(),
       },
     });
 
-    // Falls restricted, die berechtigten Nutzer in election_users speichern
+    // Berechtigte Nutzer für "restricted" Wahlen in der DB speichern
     if (access_type === 'restricted' && allowedUsers && allowedUsers.length > 0) {
       await prisma.election_users.createMany({
         data: allowedUsers.map(userId => ({
@@ -88,9 +89,26 @@ router.post('/createElection', authenticateToken, async (req, res) => {
           user_id: userId,
         })),
       });
+
+      // Wallet-Adressen der berechtigten Nutzer abrufen und NFTs minten
+      const userWallets = await prisma.wallets.findMany({
+        where: {
+          user_id: { in: allowedUsers },
+        },
+        select: { wallet_address: true }
+      });
+
+      await Promise.all(
+        userWallets.map(async (wallet) => {
+          if (wallet.wallet_address) {
+            const txMint = await myNftContract.mint(wallet.wallet_address, blockchainId);
+            await txMint.wait();
+          }
+        })
+      );
     }
 
-    res.json({ success: true, election });
+    res.json({ success: true, election, blockchainId });
   } catch (error) {
     console.error('Fehler beim Erstellen der Wahl:', error);
     res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten.' });
