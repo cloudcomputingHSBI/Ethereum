@@ -4,7 +4,6 @@ import { Container, Row, Col, Card, Form, Button, Modal, Tooltip, OverlayTrigger
 import { getAccessibleElections, getElectionDetails } from '../../api/apiService';
 import { Election } from '../../types';
 import { ReactFormGenerator } from 'react-form-builder2';
-import './StartPage.module.css';
 
 const StartPage: React.FC = () => {
   const navigate = useNavigate();
