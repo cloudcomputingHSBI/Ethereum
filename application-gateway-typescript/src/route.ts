@@ -17,8 +17,8 @@ router.post('/createElection', async (req, res) => {
     
 router.post('/vote', async (req, res) => {
     try {
-        const {election_id, options_parse, voter_id} = req.body;
-        const response = await castVote(election_id, options_parse, voter_id);
+        const {election_id, selected_text, user_id} = req.body;
+        const response = await castVote(election_id, selected_text, user_id);
         res.json(response);
 
     } catch(error) {

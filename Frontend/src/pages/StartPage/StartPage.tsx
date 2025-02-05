@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Modal, Tooltip, OverlayTrigger } from 'react-bootstrap';
-import { getAccessibleElections, getElectionDetails } from '../../api/apiService';
+import { getAccessibleElections, getElectionDetails, castVote } from '../../api/apiService';
 import { Election } from '../../types';
 import { ReactFormGenerator } from 'react-form-builder2';
+
 
 const StartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -38,8 +39,12 @@ const StartPage: React.FC = () => {
 
   const handleShowDetailsModal = async (election: Election) => {
     try {
-      const electionDetails = await getElectionDetails(election.election_id);
-  
+      
+      let electionResponse = await getElectionDetails(election.election_id);
+      const electionDetails = electionResponse.election;
+      const electionResults = electionResponse.gatewayResults;
+
+
       const status =
         election.start_date && election.end_date
           ? new Date(election.start_date) > new Date()
@@ -48,12 +53,17 @@ const StartPage: React.FC = () => {
             ? 'Beendet'
             : 'Laufend'
           : 'Unbekannt';
+
+
   
+          
       setSelectedElection({
         ...electionDetails,
         description: electionDetails.description || 'Keine Beschreibung verfügbar.',
         status,
+        results: electionResults || {},
       });
+      
   
       setShowDetailsModal(true);
     } catch (error) {
@@ -68,7 +78,8 @@ const StartPage: React.FC = () => {
 
   const handleJoinElection = async (election: Election) => {
     try {
-      const electionDetails = await getElectionDetails(election.election_id);
+      let electionResponse = await getElectionDetails(election.election_id);
+      const electionDetails = electionResponse.election; 
       console.log('Wahldetails:', electionDetails);
       setFormSchema(electionDetails.form_schema);
       setSelectedElection(election);
@@ -84,9 +95,11 @@ const StartPage: React.FC = () => {
     setSelectedElection(null);
   };
 
-  const handleFormSubmit = (submittedData: any) => {
+  const handleFormSubmit = async (submittedData: any) => {
     console.log('Abgestimmte Daten:', submittedData);
-    alert('Vielen Dank für Ihre Stimme!');
+    
+    castVote(selectedElection?.election_id, submittedData);
+    alert("Vielen Dank für die Abstimmung");
     handleCloseVotingModal();
   };
 
@@ -176,6 +189,15 @@ const StartPage: React.FC = () => {
           <p><strong>Enddatum:</strong> {selectedElection?.end_date ? new Intl.DateTimeFormat('de-DE').format(new Date(selectedElection.end_date)) : 'Unbekannt'}</p>
           <hr />
           <h5>Ergebnisse:</h5>
+          {selectedElection?.results && Object.keys(selectedElection.results.votes || {}).length > 0 ? (
+            <ul>
+              {Object.entries(selectedElection.results.votes).map(([candidate, voteCount]) => (
+                <li key={candidate}><strong>{candidate}:</strong> {voteCount} Stimme/n</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted">Die Ergebnisse können erst nach dem Ende der Wahl angezeigt werden.</p>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseDetailsModal}>

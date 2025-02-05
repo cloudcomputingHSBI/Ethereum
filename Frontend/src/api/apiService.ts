@@ -7,10 +7,6 @@ export const getAccessibleElections = async (): Promise<Election[]> => {
   return response.data;
 };
 
-export const getElectionResults = async (electionId: number): Promise<string> => {
-    const response = await apiClient.get<string>(`/api/elections/${electionId}/results`);
-    return response.data;
-  };
 
 // Benutzerliste abrufen (für restricted elections)
 export const getUsers = async (): Promise<any> => {
@@ -42,13 +38,13 @@ export const saveForm = async (
 
 export const getElectionDetails = async (electionId: number): Promise<any> => {
   const response = await apiClient.get<any>(`/api/elections/${electionId}/details`);
-  return response.data.election;
+  return response.data;
 };
 
 
-
-// ????????????????????
-export const castVote = async (electionId: number, formData: any): Promise<void> => {
-  const response = await apiClient.post(`/api/elections/${electionId}/vote`, { formData });
-  return response.data;
+export const castVote = async (electionId: any, formData: any): Promise<void> => {
+  console.log(formData);
+  console.log(electionId);
+  const response = await apiClient.post(`/api/elections/${electionId}/vote`, {formData});
+  return response.data
 };

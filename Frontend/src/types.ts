@@ -10,7 +10,12 @@ export interface Election {
   status?: string; 
   blockchain_id: number;
   access_type: 'open' | 'restricted'; 
-  allowedUsers?: number[]; 
+  allowedUsers?: number[];
+  results?: {
+    candidatesArray: string[];
+    votes: { [key: string]: number };
+    voters: string[];
+  }; 
 }
 
 export interface User {

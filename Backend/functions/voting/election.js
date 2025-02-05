@@ -141,12 +141,31 @@ router.get('/elections/:id/details', authenticateToken, async (req, res) => {
         : [],
     };
 
-    res.json({ success: true, election: electionDetails });
+    const status =
+    electionDetails.start_date && electionDetails.end_date
+          ? new Date(electionDetails.start_date) > new Date()
+            ? 'Geplant'
+            : new Date(electionDetails.end_date) < new Date()
+            ? 'Beendet'
+            : 'Laufend'
+          : 'Unbekannt';
+
+    let gatewayResults;
+    if(status == 'Beendet'){
+      gatewayResults = await gatewayApiClient.get(`/api/results/${election.election_id}`);
+    }
+
+
+    res.json({ success: true, election: electionDetails, gatewayResults: gatewayResults ? gatewayResults.data: {} });
   } catch (error) {
     console.error('Fehler beim Abrufen der Wahldetails:', error);
     res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten' });
   }
 });
+
+
+
+
 
 // Route: Abstimmung durchführen
 router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
@@ -159,6 +178,8 @@ router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
     //   return res.status(400).json({ error: 'Ungültige Parameter.' });
     // }
 
+    const user_id = String(req.user.id);
+    console.log(user_id);
     const election = await prisma.election.findUnique({
       where: { election_id: parseInt(id, 10) },
     });
@@ -167,14 +188,14 @@ router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Wahl nicht gefunden' });
     }
 
-
-    const radioButtons = formData.filter((item) => item.element === 'RadioButtons');
-    const selectedOption = radioButtons[0].options.map(option => option.selected);
-    const selectedTest = selectedOption ? selectedOption.text : null;
-
-    console.log(selectedTest)
+    const key = formData[0].value[0];  
+    const selected_button = election.form_schema[0].options.filter((item) => item.key == key);
+    const selected_text = String(selected_button[0].text);
+    console.log(selected_button, key, selected_text);
 
     const election_id = String(election.election_id);
+
+
     if (election.access_type === 'restricted') {
       const isAuthorized = await prisma.election_users.findFirst({
         where: { election_id: parseInt(id, 10), user_id: userId },
@@ -185,11 +206,19 @@ router.post('/elections/:id/vote', authenticateToken, async (req, res) => {
       }
     }
 
-    // // Abstimmung auf der Blockchain durchführen
-    // const gatewayResponse = await gatewayApiClient.post('/api/vote', {
-      election_id,
-      options_parse,
-    // });
+    
+    // Abstimmung auf der Blockchain durchführen
+    try{
+      const gatewayResponse = await gatewayApiClient.post('/api/vote', {
+        election_id,
+        selected_text,
+        user_id,
+      });
+
+    } catch(error){
+      res.status(400).json({error: 'Sie haben bereits für diese Wahl abgestimmt'});
+    }
+    
 
 
     res.json({ success: true, message: 'Abstimmung erfolgreich.' });
