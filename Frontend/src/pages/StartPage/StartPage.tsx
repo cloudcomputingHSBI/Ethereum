@@ -60,7 +60,10 @@ const StartPage: React.FC = () => {
             : "Laufend"
           : "Unbekannt";
   
-      
+      if (status !== "Beendet") {
+        electionResults = [];
+      }
+
       setSelectedElection({
         ...electionDetails,
         description: electionDetails.description || "Keine Beschreibung verfügbar.",
