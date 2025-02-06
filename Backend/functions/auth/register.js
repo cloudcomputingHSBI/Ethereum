@@ -7,7 +7,7 @@ const { ethers } = require('ethers');
 const prisma = new PrismaClient();
 
 
-const INITIAL_ETH_AMOUNT = ethers.parseEther('0.001');
+const INITIAL_ETH_AMOUNT = ethers.parseEther('0.00003');
 
 console.log("INITIAL_ETH_AMOUNT:", INITIAL_ETH_AMOUNT);
 
@@ -27,7 +27,6 @@ async function sendInitialEth(recipientAddress) {
     const tx = await wallet.sendTransaction({
       to: recipientAddress,
       value: INITIAL_ETH_AMOUNT,
-      gasLimit: 21000,
     });
 
     console.log(`Transaktion gesendet: ${tx.hash}`);

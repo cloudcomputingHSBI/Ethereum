@@ -6,6 +6,8 @@ import { Election } from '../../types';
 import { ReactFormGenerator } from 'react-form-builder2';
 import { voteInElection } from '../../api/voteService';
 import { getElectionResults } from '../../api/apiService';
+import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+
 
 const StartPage: React.FC = () => {
   const navigate = useNavigate();

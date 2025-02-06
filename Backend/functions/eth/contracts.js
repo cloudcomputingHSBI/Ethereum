@@ -3,10 +3,11 @@ const { ethers } = require("ethers");
 
 // 1. Verbindung zu Ethereum herstellen
 const provider = new ethers.JsonRpcProvider(
-  `https://sepolia.infura.io/v3/${process.env.INFURA_PROJECT_ID}`
+  `${process.env.INFURA_URL}`
 );
 
-console.log("INFURA_PROJECT_ID:", process.env.INFURA_PROJECT_ID ? "Gefunden" : "Fehlt");
+console.log("INFURA_PROJECT_ID:", process.env.INFURA_URL);
+console.log("INFURA_URL:", process.env.INFURA_URL ? "Gefunden" : "Fehlt");
 
 // 2. Wallet erstellen und mit dem Provider verbinden
 const privateKey = process.env.PRIVATE_KEY.startsWith("0x")

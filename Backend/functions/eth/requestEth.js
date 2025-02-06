@@ -57,7 +57,7 @@ async function requestEth(req, res) {
 
     // 2️⃣ Falls genug Guthaben vorhanden ist, kein Nachladen nötig
     if (balance >= MIN_BALANCE) {
-      return res.json({ success: false, message: "Guthaben reicht aus, keine Nachladung erforderlich" });
+      return res.json({ success: true, message: "Guthaben reicht aus, keine Nachladung erforderlich" });
     }
 
     // 3️⃣ ETH nachladen

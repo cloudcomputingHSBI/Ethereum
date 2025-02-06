@@ -62,3 +62,14 @@ export const getElectionDetails = async (electionId: number): Promise<any> => {
   const response = await apiClient.get<any>(`/api/elections/${electionId}/details`);
   return response.data.election;
 };
+
+export const checkAndRefillEth = async (walletAddress: string) => {
+  try {
+    const response = await apiClient.post("/requestEth", { walletAddress });
+
+    return response.data; // Gibt { success: true, transactionHash } oder { success: false, message } zurück
+  } catch (error) {
+    console.error("Fehler bei der Guthabenprüfung:", error);
+    return { success: false, error: "Fehler bei der Guthabenprüfung" };
+  }
+};
