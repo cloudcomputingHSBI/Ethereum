@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Form, Button, Modal, Tooltip, OverlayTrigger } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Modal } from 'react-bootstrap';
 import { getAccessibleElections, getElectionDetails } from '../../api/apiService';
 import { Election } from '../../types';
 import { ReactFormGenerator } from 'react-form-builder2';
@@ -15,8 +15,9 @@ const StartPage: React.FC = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showVotingModal, setShowVotingModal] = useState(false);
   const [selectedElection, setSelectedElection] = useState<Election | null>(null);
-  const [electionResults, setElectionResults] = useState<{ [key: number]: { name: string; voteCount: string }[] }>({});
   const [formSchema, setFormSchema] = useState<any>(null);
+  const [isVoting, setIsVoting] = useState(false);
+
 
   useEffect(() => {
     const fetchElections = async () => {
@@ -104,13 +105,21 @@ const StartPage: React.FC = () => {
       alert("Fehler: Keine Wahl ausgewählt!");
       return;
     }
-
-    const electionDetails = await getElectionDetails(selectedElection.election_id);
   
-    const result = await voteInElection(electionDetails, submittedData);
+    setIsVoting(true); // 🔹 Ladezustand setzen
   
-    if (result?.success) {
-      handleCloseVotingModal();
+    try {
+      const electionDetails = await getElectionDetails(selectedElection.election_id);
+      const result = await voteInElection(electionDetails, submittedData);
+  
+      if (result?.success) {
+        handleCloseVotingModal();
+      }
+    } catch (error) {
+      console.error("Fehler beim Abstimmen:", error);
+      alert("Fehler beim Abstimmen. Bitte versuche es erneut.");
+    } finally {
+      setIsVoting(false); // 🔹 Ladezustand zurücksetzen
     }
   };
 
@@ -274,12 +283,20 @@ const StartPage: React.FC = () => {
           <Button variant="secondary" onClick={handleCloseVotingModal} style={{ alignSelf: 'flex-start' }}>
             Abbrechen
           </Button>
-          <Button variant="primary" onClick={() => {
+          <Button variant="primary" disabled={isVoting} onClick={() => {
             const form = document.querySelector('form');
             form?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
           }}>
-            Abstimmen
+            {isVoting ? (
+              <>
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                {" "} Abstimmen...
+              </>
+            ) : (
+              "Abstimmen"
+            )}
           </Button>
+
         </Modal.Footer>
       </Modal>
     </Container>

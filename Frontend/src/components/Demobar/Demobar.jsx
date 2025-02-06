@@ -74,29 +74,29 @@ class Demobar extends React.Component {
     try {
       if (this.state.isSaving) return;
       this.setState({ isSaving: true });
-
-      const radioButtons = formData.filter((item) => item.element === 'RadioButtons');
+  
+      const radioButtons = formData.filter((item) => item.element === "RadioButtons");
       switch (radioButtons.length) {
         case 0:
-          alert('Es muss mindestens eine Umfrage mit einem einzigen Multiple-Choice-Feld erstellt werden!');
+          alert("Es muss mindestens eine Umfrage mit einem einzigen Multiple-Choice-Feld erstellt werden!");
           this.setState({ isSaving: false });
           this.closePreview();
           return;
         case 1:
           if (radioButtons[0].options.length < 2) {
-            alert('Es müssen mindestens zwei Antwortmöglichkeiten für das Multiple-Choice-Feld erstellt werden!');
+            alert("Es müssen mindestens zwei Antwortmöglichkeiten für das Multiple-Choice-Feld erstellt werden!");
             this.setState({ isSaving: false });
             this.closePreview();
             return;
           }
           break;
         default:
-          alert('Es darf nur eine Umfrage mit einem einzigen Multiple-Choice-Feld erstellt werden!');
+          alert("Es darf nur eine Umfrage mit einem einzigen Multiple-Choice-Feld erstellt werden!");
           this.setState({ isSaving: false });
           this.closePreview();
           return;
       }
-
+  
       await saveForm(
         this.state.formName,
         this.state.formDescription,
@@ -104,19 +104,20 @@ class Demobar extends React.Component {
         this.state.startdate,
         this.state.enddate,
         this.state.accessType,
-        this.state.accessType === 'restricted' ? this.state.allowedUsers : []
+        this.state.accessType === "restricted" ? this.state.allowedUsers : []
       );
-
-      alert('Wahl erfolgreich gespeichert!');
-      this.resetForm(); // Formular und FormGenerator zurücksetzen
-      this.props.navigate('/home'); // Navigation zur Startseite
+  
+      alert("Wahl erfolgreich gespeichert!");
+      this.resetForm();
+      this.props.navigate("/home");
     } catch (error) {
-      console.error('Fehler beim Speichern:', error);
-      alert('Fehler beim Speichern der Wahl!');
+      console.error("Fehler beim Speichern:", error);
+      alert("Fehler beim Speichern der Wahl!");
     } finally {
-      this.setState({ isSaving: false });
+      this.setState({ isSaving: false }); // Ladezustand zurücksetzen
     }
   }
+  
 
   showPreview() {
     this.setState({
@@ -313,9 +314,18 @@ class Demobar extends React.Component {
                     type="button"
                     className="btn btn-primary"
                     onClick={this.handleFormDetailsSubmit.bind(this)}
+                    disabled={this.state.isSaving}
                   >
-                    Speichern
+                    {this.state.isSaving ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        {" "} Speichern...
+                      </>
+                    ) : (
+                      "Speichern"
+                    )}
                   </button>
+
                 </div>
               </div>
             </div>
