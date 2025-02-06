@@ -4,6 +4,7 @@ import { Container, Row, Col, Card, Form, Button, Modal, Tooltip, OverlayTrigger
 import { getAccessibleElections, getElectionDetails } from '../../api/apiService';
 import { Election } from '../../types';
 import { ReactFormGenerator } from 'react-form-builder2';
+import { voteInElection } from '../../api/voteService';
 
 const StartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -69,7 +70,6 @@ const StartPage: React.FC = () => {
   const handleJoinElection = async (election: Election) => {
     try {
       const electionDetails = await getElectionDetails(election.election_id);
-      console.log('Wahldetails:', electionDetails);
       setFormSchema(electionDetails.form_schema);
       setSelectedElection(election);
       setShowVotingModal(true);
@@ -84,10 +84,19 @@ const StartPage: React.FC = () => {
     setSelectedElection(null);
   };
 
-  const handleFormSubmit = (submittedData: any) => {
-    console.log('Abgestimmte Daten:', submittedData);
-    alert('Vielen Dank für Ihre Stimme!');
-    handleCloseVotingModal();
+  const handleFormSubmit = async (submittedData: any) => {
+    if (!selectedElection) {
+      alert("Fehler: Keine Wahl ausgewählt!");
+      return;
+    }
+
+    const electionDetails = await getElectionDetails(selectedElection.election_id);
+  
+    const result = await voteInElection(electionDetails, submittedData);
+  
+    if (result?.success) {
+      handleCloseVotingModal();
+    }
   };
 
   const filteredElections = elections.filter((election) =>
@@ -143,7 +152,7 @@ const StartPage: React.FC = () => {
 
             return (
               <Col md={4} className="mb-4" key={election.election_id}>
-                <Card className="shadow-sm position-relative">
+                <Card className="shadow-sm position-relative" style={{ height: '237px' }}>
                   <Card.Body>
                     <Card.Title>{election.name}</Card.Title>
                     <Card.Text>{election.description || 'Keine Beschreibung verfügbar.'}</Card.Text>
@@ -159,6 +168,12 @@ const StartPage: React.FC = () => {
                       </p>
                     )}
 
+                    {!isEnded && (
+                      <p className="text-success" style={{ visibility: 'hidden' }}>
+                        <strong>dwe</strong>
+                      </p>
+                    )}
+                    
                     <div className="d-flex justify-content-between">
                       <Button variant="secondary" onClick={() => handleShowDetailsModal(election)}>
                         Details 

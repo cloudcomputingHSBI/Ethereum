@@ -5,6 +5,7 @@ const { loginUser } = require("./functions/auth/login");
 const electionRoutes = require("./functions/voting/election");
 const userRoutes = require("./functions/users/users");
 const authenticateToken = require("./functions/middlewares/authenticateToken");
+const { requestEth } = require("./functions/eth/requestEth");
 
 
 const app = express();
@@ -25,6 +26,7 @@ app.post('/registerUser', registerUser);
 app.post('/loginUser', loginUser);
 app.use('/api', authenticateToken , electionRoutes);
 app.use('/users', authenticateToken, userRoutes);
+app.post('/requestEth', requestEth);
 
 // Exportiere die App für Google Cloud Functions
 const functionsFramework = require("@google-cloud/functions-framework");

@@ -7,6 +7,12 @@ export const getAccessibleElections = async (): Promise<Election[]> => {
   return response.data;
 };
 
+// Funktion: Public Wallet Address abrufen
+export const getPublicWallet = async (): Promise<any> => {
+  const response = await apiClient.get<any>('/api/getPublicWallet');
+  return response.data.wallet_address;
+};
+
 export const getElectionResults = async (electionId: number): Promise<string> => {
     const response = await apiClient.get<string>(`/api/elections/${electionId}/results`);
     return response.data;

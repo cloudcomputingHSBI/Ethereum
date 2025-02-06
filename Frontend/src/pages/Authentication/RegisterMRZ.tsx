@@ -1,8 +1,9 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useState, FormEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Alert, Image } from 'react-bootstrap';
 import AusweisImage from '../../assets/Ausweis.png';
-import { registerUser } from '../../api/authService'; // Importiere die API-Methode
+import { registerUser } from '../../api/authService';
+import { ethers } from 'ethers';
 
 const RegisterMRZ: React.FC = () => {
   const [block1, setBlock1] = useState<string>('');
@@ -10,6 +11,8 @@ const RegisterMRZ: React.FC = () => {
   const [block3, setBlock3] = useState<string>('');
   const [block4, setBlock4] = useState<string>('');
   const [block5, setBlock5] = useState<string>('');
+  const [privateKey, setPrivateKey] = useState<string | null>(null);
+  const [showLoginButton, setShowLoginButton] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const navigate = useNavigate();
 
@@ -22,18 +25,31 @@ const RegisterMRZ: React.FC = () => {
     }
 
     try {
-      // Daten aus localStorage abrufen
+      // 1️⃣ Wallet im Frontend generieren
+      const wallet = ethers.Wallet.createRandom();
+      const publicKey = wallet.address;
+      const generatedPrivateKey = wallet.privateKey;
+
+      // 2️⃣ Private Key nur im State speichern (nicht in localStorage!)
+      setPrivateKey(generatedPrivateKey);
+
+      // 3️⃣ Daten für das Backend vorbereiten
       const generalData = JSON.parse(localStorage.getItem('generalData') || '{}');
-      const completeData = { ...generalData, mrzData: { block1, block2, block3, block4, block5 } };
+      const completeData = { 
+        ...generalData, 
+        mrzData: { block1, block2, block3, block4, block5 },
+        publicKey // Public Key wird mitgeschickt!
+      };
 
-      // API-Aufruf
-      await registerUser(completeData);
+      // 4️⃣ API-Aufruf mit Public Key
+      const response = await registerUser(completeData);
 
-      // Erfolgreiche Registrierung: Weiterleitung zum Login
-      navigate('/login');
+      if (response && response.walletAddress) {
+        alert("✅ Registrierung erfolgreich! Speichere deinen Private Key sicher!");
+      }
+
     } catch (error: any) {
-      // Fehler vom Server anzeigen
-      setErrorMessage(error.response?.data?.message || 'Fehler bei der Registrierung');
+      setErrorMessage(error.message || 'Fehler bei der Registrierung');
     }
   };
 
@@ -117,6 +133,35 @@ const RegisterMRZ: React.FC = () => {
                   Registrieren
                 </Button>
               </Form>
+
+              {/* Private Key nur einmal anzeigen, dann nie wieder */}
+              {privateKey && !showLoginButton && (
+                <div className="mt-4 p-3 border border-info rounded">
+                  <h5>Dein privater Schlüssel</h5>
+                  <p className="text-break">{privateKey}</p>
+                  <p className="text-danger">
+                    🚨 Speichere diesen Schlüssel sicher! Er kann nicht wiederhergestellt werden! 🚨
+                  </p>
+                  <Button variant="danger" className="mt-2" onClick={() => { 
+                    setPrivateKey(null); 
+                    setShowLoginButton(true); // Zeigt den Login-Button an
+                  }}>
+                    Verstanden, Schlüssel gespeichert
+                  </Button>
+                </div>
+              )}
+
+              {/* Login-Button erscheint erst, wenn der Nutzer bestätigt hat */}
+              {showLoginButton && (
+                <Button 
+                  variant="success" 
+                  className="mt-3 w-100" 
+                  onClick={() => navigate("/login")}
+                >
+                  Login
+                </Button>
+              )}
+
             </Card.Body>
           </Card>
         </Col>

@@ -11,6 +11,7 @@ export interface RegisterUserRequest {
 export interface RegisterUserResponse {
   message: string;
   userId?: number;
+  walletAddress?: string;
 }
 
 // Benutzer registrieren

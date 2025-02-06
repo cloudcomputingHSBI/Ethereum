@@ -1,64 +1,58 @@
 const bcrypt = require('bcrypt');
 const { PrismaClient } = require('@prisma/client');
 const parse = require('mrz').parse;
-const crypto = require('crypto');
-const ethers = require('ethers');
-
+const { provider, wallet } = require('../eth/contracts');
+const { ethers } = require('ethers');
 
 const prisma = new PrismaClient();
 
-// Funktion zur Verschlüsselung des privaten Schlüssels mit `crypto.createCipheriv`
-function encryptPrivateKey(privateKey, secret) {
-  const iv = crypto.randomBytes(16);
-  const key = crypto.createHash('sha256').update(secret).digest();
-  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
 
-  let encrypted = cipher.update(privateKey, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  
-  // Rückgabe der verschlüsselten Daten zusammen mit dem IV
-  return {
-    encryptedData: encrypted,
-    iv: iv.toString('hex'),
-  };
+const INITIAL_ETH_AMOUNT = ethers.parseEther('0.001');
+
+console.log("INITIAL_ETH_AMOUNT:", INITIAL_ETH_AMOUNT);
+
+
+async function sendInitialEth(recipientAddress) {
+  try {
+    console.log(`Sende ${ethers.formatEther(INITIAL_ETH_AMOUNT)} ETH an ${recipientAddress}...`);
+
+    // Prüfen, ob die Master-Wallet genügend Guthaben hat
+    const masterBalance = await provider.getBalance(wallet.address);
+    if (masterBalance < INITIAL_ETH_AMOUNT) {
+      console.error("Master-Wallet hat nicht genug Guthaben für den Transfer.");
+      return null;
+    }
+
+    // Erstelle und sende die Transaktion mit der bereits vorhandenen Wallet
+    const tx = await wallet.sendTransaction({
+      to: recipientAddress,
+      value: INITIAL_ETH_AMOUNT,
+      gasLimit: 21000,
+    });
+
+    console.log(`Transaktion gesendet: ${tx.hash}`);
+    await tx.wait();
+    console.log(`Transaktion bestätigt: ${tx.hash}`);
+
+    return tx.hash;
+  } catch (error) {
+    console.error("Fehler beim Senden von ETH:", error);
+    return null;
+  }
 }
 
 exports.registerUser = async (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(405).send({ error: 'Method not allowed' });
-  }
-
-  const { firstName, lastName, email, password, mrzData } = req.body;
-
   try {
-    // Prüfe, ob alle erforderlichen Daten vorhanden sind
-    if (!firstName || !lastName || !email || !password || !mrzData) {
+    const { firstName, lastName, email, password, mrzData, publicKey } = req.body;
+
+    if (!firstName || !lastName || !email || !password || !mrzData || !publicKey) {
       return res.status(400).json({ error: 'Alle Felder müssen ausgefüllt werden.' });
     }
 
-    // MRZ-Daten auffüllen
-    const mrzLines = [
-      ('IDD<<' + mrzData.block1).padEnd(30, '<'), // Erste Zeile (TD1, 30 Zeichen)
-      (mrzData.block2 + '<' + mrzData.block3 + 'D<<' + mrzData.block4).padEnd(29, '<') + mrzData.block5, // Zweite Zeile
-      (lastName.toUpperCase() + '<<' + firstName.toUpperCase()).padEnd(30, '<'), // Dritte Zeile: Nachname und Vorname
-    ];
-
-    // MRZ-Daten parsen und validieren
-    const result = parse(mrzLines);
-
-    if (!result.valid) {
-      return res.status(400).json({ error: 'Ungültige MRZ-Daten.' });
-    }
-
-    // Überprüfen, ob die MRZ-Daten bereits registriert wurden
+    // Prüfen, ob Nutzer bereits existiert
     const existingUser = await prisma.users.findFirst({
-      where: {
-        mrz_data: {
-          equals: JSON.stringify(mrzData),
-        },
-      },
+      where: { mrz_data: { equals: mrzData } },
     });
-
     if (existingUser) {
       return res.status(409).json({ error: 'Diese MRZ-Daten wurden bereits registriert.' });
     }
@@ -66,35 +60,41 @@ exports.registerUser = async (req, res) => {
     // Passwort hashen
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Benutzer in der Datenbank erstellen
+    // Benutzer speichern
     const user = await prisma.users.create({
       data: {
         email,
         password_hash: hashedPassword,
-        mrz_data: JSON.stringify(mrzData),
+        mrz_data: mrzData,
         is_verified: true,
         name: `${firstName} ${lastName}`,
       },
     });
 
-    // Generiere ein neues Wallet für den Benutzer
-    const wallet = ethers.Wallet.createRandom();
-
-    // Verschlüssle den privaten Schlüssel
-    const secret = process.env.PRIVATE_KEY_SECRET || 'geheim';
-    const { encryptedData, iv } = encryptPrivateKey(wallet.privateKey, secret);
-
-    // Speichere das Wallet in der Datenbank
+    // Public Key in Datenbank speichern
     await prisma.wallets.create({
       data: {
         user_id: user.user_id,
-        wallet_address: wallet.address,
-        encrypted_private_key: encryptedData,
-        iv: iv,
+        wallet_address: publicKey,
       },
     });
 
-    res.status(201).json({ message: 'Benutzer und Wallet erfolgreich registriert.', user });
+    // 1️⃣ ETH an die neue Wallet senden
+    const txHash = await sendInitialEth(publicKey);
+
+    if (!txHash) {
+      return res.status(500).json({ 
+        message: 'Benutzer wurde registriert, aber die ETH-Überweisung ist fehlgeschlagen. Bitte kontaktiere den Support.', 
+        walletAddress: publicKey
+      });
+    }
+
+    res.status(201).json({ 
+      message: 'Benutzer erfolgreich registriert und ETH gesendet.',
+      walletAddress: publicKey,
+      transactionHash: txHash
+    });
+
   } catch (error) {
     console.error('Fehler bei der Registrierung:', error);
     res.status(500).json({ error: 'Ein interner Fehler ist aufgetreten.' });
