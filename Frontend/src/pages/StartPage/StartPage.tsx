@@ -5,6 +5,7 @@ import { getAccessibleElections, getElectionDetails } from '../../api/apiService
 import { Election } from '../../types';
 import { ReactFormGenerator } from 'react-form-builder2';
 import { voteInElection } from '../../api/voteService';
+import { getElectionResults } from '../../api/apiService';
 
 const StartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const StartPage: React.FC = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showVotingModal, setShowVotingModal] = useState(false);
   const [selectedElection, setSelectedElection] = useState<Election | null>(null);
+  const [electionResults, setElectionResults] = useState<{ [key: number]: { name: string; voteCount: string }[] }>({});
   const [formSchema, setFormSchema] = useState<any>(null);
 
   useEffect(() => {
@@ -21,6 +23,9 @@ const StartPage: React.FC = () => {
       try {
         const response = await getAccessibleElections();
         setElections(response as Election[]);
+
+        const electionResults = await getElectionResults(79);
+        console.log(electionResults);
       } catch (error) {
         console.error('Fehler beim Laden der Wahlen:', error);
         setElections([]);
@@ -40,25 +45,32 @@ const StartPage: React.FC = () => {
   const handleShowDetailsModal = async (election: Election) => {
     try {
       const electionDetails = await getElectionDetails(election.election_id);
+      var electionResults = await getElectionResults(election.election_id); // Ergebnisse abrufen
+
+      if(!electionResults) {
+        electionResults = [];
+      }
   
       const status =
         election.start_date && election.end_date
           ? new Date(election.start_date) > new Date()
-            ? 'Geplant'
+            ? "Geplant"
             : new Date(election.end_date) < new Date()
-            ? 'Beendet'
-            : 'Laufend'
-          : 'Unbekannt';
+            ? "Beendet"
+            : "Laufend"
+          : "Unbekannt";
   
+      
       setSelectedElection({
         ...electionDetails,
-        description: electionDetails.description || 'Keine Beschreibung verfügbar.',
+        description: electionDetails.description || "Keine Beschreibung verfügbar.",
         status,
+        results: electionResults || [],
       });
   
       setShowDetailsModal(true);
     } catch (error) {
-      alert('Fehler beim Abrufen der Wahldetails.');
+      alert("Fehler beim Abrufen der Wahldetails.");
     }
   };
 
@@ -206,18 +218,37 @@ const StartPage: React.FC = () => {
         </Modal.Header>
         <Modal.Body>
           <p>{selectedElection?.description}</p>
-          <p><strong>Status:</strong> {selectedElection?.status}</p>
-          <p><strong>Startdatum:</strong> {selectedElection?.start_date ? new Intl.DateTimeFormat('de-DE').format(new Date(selectedElection.start_date)) : 'Unbekannt'}</p>
-          <p><strong>Enddatum:</strong> {selectedElection?.end_date ? new Intl.DateTimeFormat('de-DE').format(new Date(selectedElection.end_date)) : 'Unbekannt'}</p>
+          <p>
+            <strong>Status:</strong> {selectedElection?.status}
+          </p>
+          <p>
+            <strong>Startdatum:</strong>{" "}
+            {selectedElection?.start_date ? new Intl.DateTimeFormat("de-DE").format(new Date(selectedElection.start_date)) : "Unbekannt"}
+          </p>
+          <p>
+            <strong>Enddatum:</strong>{" "}
+            {selectedElection?.end_date ? new Intl.DateTimeFormat("de-DE").format(new Date(selectedElection.end_date)) : "Unbekannt"}
+          </p>
           <hr />
           <h5>Ergebnisse:</h5>
+          {selectedElection?.results && selectedElection.results.length > 0 ? (
+            <ul>
+              {selectedElection.results.map((result: { name: string; voteCount: string }, index: number) => (
+                <li key={index}>
+                  <strong>{result.name}</strong>: {result.voteCount} Stimme/n
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted">Die Ergebnisse können erst nach dem Ende der Wahl angezeigt werden.</p>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseDetailsModal}>
             Schließen
           </Button>
         </Modal.Footer>
-      </Modal>
+      </Modal>;
 
       <Modal show={showVotingModal} onHide={handleCloseVotingModal} size="lg">
         <Modal.Header closeButton>

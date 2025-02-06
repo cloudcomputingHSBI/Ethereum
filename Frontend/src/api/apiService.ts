@@ -13,10 +13,22 @@ export const getPublicWallet = async (): Promise<any> => {
   return response.data.wallet_address;
 };
 
-export const getElectionResults = async (electionId: number): Promise<string> => {
-    const response = await apiClient.get<string>(`/api/elections/${electionId}/results`);
-    return response.data;
-  };
+export const getElectionResults = async (electionId: number): Promise<{ name: string; voteCount: string }[] | null> => {
+  try {
+    const response = await apiClient.get(`/api/elections/${electionId}/results`);
+    
+    // Überprüfe, ob das Ergebnis tatsächlich ein Array ist
+    if (!Array.isArray(response.data.results)) {
+      console.error("❌ API hat ein unerwartetes Ergebnis zurückgegeben:", response.data);
+      return null;
+    }
+
+    return response.data.results; // Ergebnisse zurückgeben
+  } catch (error) {
+    console.error("❌ Fehler beim Abrufen der Wahlergebnisse:", error);
+    return null;
+  }
+};
 
 // Benutzerliste abrufen (für restricted elections)
 export const getUsers = async (): Promise<any> => {

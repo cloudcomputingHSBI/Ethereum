@@ -11,6 +11,7 @@ export interface Election {
   blockchain_id: number;
   access_type: 'open' | 'restricted'; 
   allowedUsers?: number[]; 
+  results?: { name: string; voteCount: string }[];
 }
 
 export interface User {
