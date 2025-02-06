@@ -1,78 +1,87 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  // 1) MyNFT-Contract deployen
-  const MyNFT = await ethers.getContractFactory("MyNFT");
-  const myNft = await MyNFT.deploy();
-  await myNft.waitForDeployment();
+  const startTime = Date.now(); // Startzeit der gesamten Ausführung
+  const deployStartTime = Date.now();
 
-  // Contract-Adresse auslesen
-  const myNftAddress = await myNft.getAddress();
-  console.log("MyNFT deployed to:", myNftAddress);
+  // 1) MultiElectionNFTVoting-Contract (inklusive NFT-Logik) deployen
+  const VotingContract = await ethers.getContractFactory("MultiElectionNFTVoting");
+  const votingInstance = await VotingContract.deploy();
+  await votingInstance.waitForDeployment();
+  const deployEndTime = Date.now();
 
-  // 2) Beispiel: Ein paar NFTs minten
+  const votingContractAddress = await votingInstance.getAddress();
+  console.log(`MultiElectionNFTVoting deployed to: ${votingContractAddress}`);
+  console.log(`Dauer für Deployment: ${(deployEndTime - deployStartTime) / 1000} Sekunden\n`);
+
+  // 2) Beispiel: NFT an die eigene Adresse minten (wird jetzt in createElection gemacht)
   const [owner] = await ethers.getSigners();
+  console.log(`Aktueller Owner: ${owner.address}`);
 
-  tx = await myNft.mint(owner.address, 1); // NFT für Wahl 2
-  await tx.wait();
-
-  console.log("NFTs wurden gemintet und Wahlen zugeordnet:");
-  console.log(`- Owner: Token für Wahl 1`);
-  console.log(`- Owner: Token für Wahl 2`);
-
-  // 3) MultiElectionNFTVoting-Contract deployen
-  const MultiElectionNFTVoting = await ethers.getContractFactory("MultiElectionNFTVoting");
-  const multiElectionVoting = await MultiElectionNFTVoting.deploy(myNftAddress);
-  await multiElectionVoting.waitForDeployment();
-
-  const multiElectionVotingAddress = await multiElectionVoting.getAddress();
-  console.log("MultiElectionNFTVoting deployed to:", multiElectionVotingAddress);
-
-  // 4) Neue Wahlen erstellen
+  // 3) Neue Wahlen erstellen
   const currentTime = Math.floor(Date.now() / 1000); // Aktuelle Zeit in Unix-Timestamp
-  const votingStartTime = currentTime + 10; // Startzeit: 1 Minute in der Zukunft
+  const votingStartTime = currentTime + 1; // Startzeit: 1 Sekunde in der Zukunft
   const votingEndTime = votingStartTime + 3600; // Endzeit: 1 Stunde nach Start
 
-  // Wahl 1 erstellen
+  // Wahl 1 erstellen mit Owner als einziger wahlberechtigter Adresse
   const candidateNames1 = ["Alice", "Bob"];
-  tx = await multiElectionVoting.createElection(
+  tx = await votingInstance.createElection(
     "Wahl 1",
     candidateNames1,
     votingStartTime,
-    votingEndTime
+    votingEndTime,
+    [owner.address] // Nur der Owner kann abstimmen
   );
   await tx.wait();
   console.log("Wahl 1 erstellt:", candidateNames1);
 
-  // Wahl 2 erstellen
+  // Wahl 2 erstellen mit Owner als einziger wahlberechtigter Adresse
   const candidateNames2 = ["Eve", "Mallory"];
-  tx = await multiElectionVoting.createElection(
+  tx = await votingInstance.createElection(
     "Wahl 2",
     candidateNames2,
     votingStartTime,
-    votingEndTime
+    votingEndTime,
+    [owner.address] // Nur der Owner kann abstimmen
   );
   await tx.wait();
   console.log("Wahl 2 erstellt:", candidateNames2);
 
-  // 5) (Optional) Test: Owner stimmt für Kandidat 0 in Wahl 1 ab
+  // 4) (Optional) Test: Owner stimmt für Kandidat 0 in Wahl 1 ab
   console.log("Warte auf Startzeit der Abstimmung...");
   await new Promise((resolve) => setTimeout(resolve, (votingStartTime - currentTime) * 1000));
 
-  // Abstimmung in Wahl 1
-  tx = await multiElectionVoting.vote(1, 0, 1); // Wahl-ID: 1, Kandidat-Index: 0, Token-ID: 1
+  // Abstimmung in Wahl 1 mit automatisch erkannter Token-ID
+  tx = await votingInstance.vote(1, 0); // Wahl-ID: 1, Kandidat-Index: 0 (Alice)
   await tx.wait();
   console.log(`Owner (${owner.address}) hat in Wahl 1 für ${candidateNames1[0]} abgestimmt`);
 
-  // Ergebnisse abrufen
-  const candidates = await multiElectionVoting.getCandidates(1);
-  console.log("Kandidaten und Stimmen für Wahl 1:", candidates);
+  // Abstimmung für Wahl 2 mit automatisch erkannter Token-ID
+  tx = await votingInstance.vote(2, 1); // Wahl-ID: 2, Kandidat-Index: 1 (Mallory)
+  await tx.wait();
+  console.log(`Owner (${owner.address}) hat in Wahl 2 für ${candidateNames2[1]} abgestimmt`);
 
-  const electionTimes = await multiElectionVoting.getElectionTimes(1);
-  console.log("Zeiten für Wahl 1:", electionTimes);
+  // 5) Ergebnisse abrufen
+  const candidates1 = await votingInstance.getCandidates(1);
+  console.log("Kandidaten und Stimmen für Wahl 1:", candidates1);
 
-  const getElectionDetails = await multiElectionVoting.getElectionDetails(1);
-  console.log("Alle Details für Wahl 1:", getElectionDetails);
+  const candidates2 = await votingInstance.getCandidates(2);
+  console.log("Kandidaten und Stimmen für Wahl 2:", candidates2);
+
+  const electionTimes1 = await votingInstance.getElectionTimes(1);
+  console.log("Zeiten für Wahl 1:", electionTimes1);
+
+  const electionTimes2 = await votingInstance.getElectionTimes(2);
+  console.log("Zeiten für Wahl 2:", electionTimes2);
+
+  const getElectionDetails1 = await votingInstance.getElectionDetails(1);
+  console.log("Alle Details für Wahl 1:", getElectionDetails1);
+
+  const getElectionDetails2 = await votingInstance.getElectionDetails(2);
+  console.log("Alle Details für Wahl 2:", getElectionDetails2);
+
+  const totalTime = (Date.now() - startTime) / 1000;
+  console.log(`Gesamtdauer des Deployments: ${totalTime} Sekunden`);
 }
 
 main().catch((error) => {
