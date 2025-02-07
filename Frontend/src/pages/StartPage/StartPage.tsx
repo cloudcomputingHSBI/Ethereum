@@ -108,11 +108,17 @@ const StartPage: React.FC = () => {
       return;
     }
   
-    setIsVoting(true); // 🔹 Ladezustand setzen
+    const privateKey = prompt("🔑 Bitte geben Sie Ihren privaten Schlüssel ein:");
+    if (!privateKey) {
+      alert("❌ Privater Schlüssel wird benötigt!");
+      return;
+    }
+  
+    setIsVoting(true);
   
     try {
       const electionDetails = await getElectionDetails(selectedElection.election_id);
-      const result = await voteInElection(electionDetails, submittedData);
+      const result = await voteInElection(electionDetails, submittedData, privateKey);
   
       if (result?.success) {
         handleCloseVotingModal();
@@ -121,7 +127,7 @@ const StartPage: React.FC = () => {
       console.error("Fehler beim Abstimmen:", error);
       alert("Fehler beim Abstimmen. Bitte versuche es erneut.");
     } finally {
-      setIsVoting(false); // 🔹 Ladezustand zurücksetzen
+      setIsVoting(false);
     }
   };
 

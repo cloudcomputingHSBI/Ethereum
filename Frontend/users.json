@@ -1,0 +1,12 @@
+[
+  {
+    "email": "testuser1@example.com",
+    "privateKey": "0x2d2eef40bd625b3a0bd9af290998d2f41fd0a9591bd4b94fde9a73a342816d93",
+    "walletAddress": "0x7670401E68F6CF5AB38De90E911844affD36Bf2B"
+  },
+  {
+    "email": "testuser2@example.com",
+    "privateKey": "0xf19abeb20bc0d961e1eba8cec1bee596c39097cb623c00f7775733c605ee1e20",
+    "walletAddress": "0x9F1b62b23Cc5938130FABEA32eE2704f471C4310"
+  }
+]

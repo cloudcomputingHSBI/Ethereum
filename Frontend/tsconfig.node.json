@@ -3,11 +3,14 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2022",
     "lib": ["ES2023"],
-    "module": "ESNext",
+    "module": "NodeNext",  // 🔹 Wichtig für `import.meta.env`
+    "moduleResolution": "NodeNext", // 🔹 Verbessert Modulauflösung für Node.js
     "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,  // 🔹 Erlaubt JSON- und CommonJS-Imports
+    "allowSyntheticDefaultImports": true, // 🔹 Erlaubt Import von JSON-Dateien
 
-    /* Bundler mode */
-    "moduleResolution": "bundler",
+    /* Bundler mode (deaktiviert) */
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
@@ -20,5 +23,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "src/**/*", "src/abis/**/*.json"]
 }

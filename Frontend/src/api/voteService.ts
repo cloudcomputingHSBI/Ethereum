@@ -1,8 +1,10 @@
-import { getPublicWallet, checkAndRefillEth } from "../api/apiService";
+import { getPublicWallet } from "../api/apiService";
 import { ethers } from "ethers";
 import { getProvider, getVotingContract } from "../api/contracts";
 
-// Funktion zur Ermittlung des Kandidaten-Index
+/**
+ * Funktion zur Ermittlung des Kandidaten-Index
+ */
 const findCandidateIndex = (formSchema: any[], selectedKey: string): number | null => {
   if (!Array.isArray(formSchema)) {
     console.error("Fehler: formSchema ist kein Array!", formSchema);
@@ -20,60 +22,64 @@ const findCandidateIndex = (formSchema: any[], selectedKey: string): number | nu
   return null;
 };
 
-// Abstimmungsfunktion
-export const voteInElection = async (election: any, submittedData: any) => {
+/**
+ * Abstimmungsfunktion mit Private Key als Parameter
+ */
+export const voteInElection = async (election: any, submittedData: any, privateKey: string) => {
   try {
-    const selectedKey = submittedData[0]?.value[0];
-    if (!selectedKey) {
-      alert("Bitte wählen Sie einen Kandidaten aus.");
-      return;
+
+  
+    if (!privateKey) {
+      console.error("❌ Fehler: Kein Private Key übergeben!");
+      return { success: false, error: "Private Key fehlt" };
     }
 
-    // Nutzer nach Private Key fragen
-    const privateKey = prompt("Bitte geben Sie Ihren privaten Schlüssel ein:");
-    if (!privateKey) {
-      alert("Privater Schlüssel benötigt!");
-      return;
+    const selectedKey = submittedData[0]?.value[0];
+    if (!selectedKey) {
+      console.error("❌ Fehler: Kein Kandidat gewählt.");
+      return { success: false, error: "Kein Kandidat gewählt" };
     }
 
     // Wallet-Adresse abrufen
     const walletAddress = await getPublicWallet();
     if (!walletAddress) {
-      alert("Wallet-Adresse konnte nicht abgerufen werden.");
-      return;
+      console.error("❌ Wallet-Adresse konnte nicht abgerufen werden.");
+      return { success: false, error: "Wallet-Adresse nicht abrufbar" };
     }
 
-    // Wallet mit Private Key erstellen (verwende `getProvider()` aus contracts.ts)
+    // Wallet mit Private Key erstellen
     const provider = getProvider();
     const wallet = new ethers.Wallet(privateKey, provider);
 
-    if (wallet.address !== walletAddress) {
-      alert("Der eingegebene Private Key stimmt nicht mit der gespeicherten Wallet überein.");
-      return;
-    }
+    // if (wallet.address !== walletAddress) {
+    //   console.error("❌ Private Key stimmt nicht mit gespeicherter Wallet-Adresse überein.");
+    //   return { success: false, error: "Private Key stimmt nicht mit Wallet überein" };
+    // }
 
     // Smart Contract Instanz holen
     const contract = getVotingContract(wallet);
+    console.log("🔗 Smart Contract:", contract);
 
     // Bestimme den Kandidaten-Index
     const formSchema = Array.isArray(election.form_schema) ? election.form_schema : [];
     const selectedCandidateIndex = findCandidateIndex(formSchema, selectedKey);
 
     if (selectedCandidateIndex === null) {
-      alert("Fehler: Der gewählte Kandidat konnte nicht gefunden werden.");
-      return;
+      console.error("❌ Fehler: Der gewählte Kandidat konnte nicht gefunden werden.");
+      return { success: false, error: "Kandidat nicht gefunden" };
     }
 
     // Transaktion senden
+    console.log(`🗳 Stimme wird abgegeben für: ${selectedCandidateIndex}`);
+    console.log(`📝 Wahl-ID: ${election.blockchain_id}`);
     const tx = await contract.vote(election.blockchain_id, selectedCandidateIndex);
     await tx.wait();
 
-    alert("Ihre Stimme wurde erfolgreich abgegeben!");
+    console.log(`✅ Stimme erfolgreich abgegeben! TX-Hash: ${tx.hash}`);
 
     return { success: true, transactionHash: tx.hash };
   } catch (error) {
-    console.error("Fehler bei der Abstimmung:", error);
-    alert("Es gab ein Problem bei der Abstimmung.");
+    console.error("❌ Fehler bei der Abstimmung:", error);
     return { success: false, error };
   }
 };

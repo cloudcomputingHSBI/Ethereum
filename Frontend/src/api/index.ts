@@ -1,8 +1,9 @@
 import axios from 'axios';
 
-// API-Client konfigurieren
-const API_BASE_URL = 'http://localhost:8080'; // Base URL aus .env
+// 🔹 API-Base-URL (falls nicht in .env definiert, hier anpassen)
+const API_BASE_URL = 'http://localhost:8080';
 
+// 🔹 API-Client erstellen
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -10,16 +11,27 @@ const apiClient = axios.create({
   },
 });
 
-// Interceptor für Authorization-Header
+// 🔹 Token-Variable für Node.js speichern
+let authToken: string | null = null;
+
+// Funktion zum Setzen des Tokens (wird von Tests oder Login-Funktion verwendet)
+export function setAuthToken(token: string) {
+  authToken = token;
+}
+
+// 🔹 Interceptor für Authorization-Header (setzt Token aus Speicher)
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('jwtToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (typeof window !== "undefined") {
+    authToken = localStorage.getItem('jwtToken'); // Falls im Browser, nutze localStorage
+  }
+
+  if (authToken) {
+    config.headers.Authorization = `Bearer ${authToken}`;
   }
   return config;
-});
+}, (error) => Promise.reject(error));
 
-// Interceptor für Fehlerbehandlung
+// 🔹 Interceptor für Fehlerbehandlung
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

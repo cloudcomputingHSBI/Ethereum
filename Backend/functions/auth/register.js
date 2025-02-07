@@ -7,7 +7,7 @@ const { ethers } = require('ethers');
 const prisma = new PrismaClient();
 
 
-const INITIAL_ETH_AMOUNT = ethers.parseEther('0.00003');
+const INITIAL_ETH_AMOUNT = ethers.parseEther('0.007');
 
 console.log("INITIAL_ETH_AMOUNT:", INITIAL_ETH_AMOUNT);
 
@@ -49,12 +49,12 @@ exports.registerUser = async (req, res) => {
     }
 
     // Prüfen, ob Nutzer bereits existiert
-    const existingUser = await prisma.users.findFirst({
-      where: { mrz_data: { equals: mrzData } },
-    });
-    if (existingUser) {
-      return res.status(409).json({ error: 'Diese MRZ-Daten wurden bereits registriert.' });
-    }
+    // const existingUser = await prisma.users.findFirst({
+    //   where: { mrz_data: { equals: mrzData } },
+    // });
+    // if (existingUser) {
+    //   return res.status(409).json({ error: 'Diese MRZ-Daten wurden bereits registriert.' });
+    // }
 
     // Passwort hashen
     const hashedPassword = await bcrypt.hash(password, 10);

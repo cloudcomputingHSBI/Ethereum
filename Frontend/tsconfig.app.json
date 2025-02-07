@@ -4,11 +4,15 @@
     "target": "ES2020",
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
+    "module": "NodeNext",  // 🔹 Damit `import.meta.env` nicht fehlschlägt
     "skipLibCheck": true,
 
-    /* Bundler mode */
-    "moduleResolution": "bundler",
+    /* JSON-Import erlauben */
+    "resolveJsonModule": true, // 🔹 Ermöglicht Import von `.json`-Dateien
+    "esModuleInterop": true,   // 🔹 Erlaubt `import ... from` für JSON
+
+    /* Modulauflösung für Node.js */
+    "moduleResolution": "NodeNext", // 🔹 Besser für `process.env`
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
