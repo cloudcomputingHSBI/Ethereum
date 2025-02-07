@@ -12,6 +12,7 @@
   "dependencies": {
     "axios": "^1.7.9",
     "bootstrap": "^3.4.1",
+    "chart.js": "^4.4.7",
     "ethers": "^6.13.5",
     "formBuilder": "^3.19.1",
     "jquery": "^3.7.1",
@@ -19,6 +20,7 @@
     "jquery-ui-sortable": "^1.0.0",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.7",
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "^18.2.0",
     "react-form-builder2": "^0.16.5",
     "react-router-dom": "^7.1.1",

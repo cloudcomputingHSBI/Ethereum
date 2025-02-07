@@ -6,7 +6,9 @@ import { Election } from '../../types';
 import { ReactFormGenerator } from 'react-form-builder2';
 import { voteInElection } from '../../api/voteService';
 import { getElectionResults } from '../../api/apiService';
-import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+// import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import { Pie } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 
 
 const StartPage: React.FC = () => {
@@ -133,6 +135,47 @@ const StartPage: React.FC = () => {
     return <p className="text-center">Lade Wahlen...</p>;
   }
 
+  ChartJS.register(ArcElement, Tooltip, Legend);
+
+// const ElectionResults = ({ selectedElection }: { selectedElection: any }) => {
+//   const data = selectedElection?.results?.map((result: { name: string; voteCount: string }) => ({
+//     label: result.name,
+//     value: parseInt(result.voteCount),
+//   })) || [];
+
+//   // Sicherstellen, dass die Struktur von chartData immer gültig ist
+//   const chartData = {
+//     labels: data.length > 0 ? data.map((item) => item.label) : ["Keine Daten"],
+//     datasets: [
+//       {
+//         data: data.length > 0 ? data.map((item) => item.value) : [1],
+//         backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#FF5733"],
+//       },
+//     ],
+//   };
+
+const firstFiveColors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#FF5733"];
+
+const generateRandomColor = () => {
+  return `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`;
+}
+
+const chartData = selectedElection?.results
+  ? {
+      labels: selectedElection.results.map((result) => result.name),
+      datasets: [
+        {
+          data: selectedElection.results.map((result) => parseInt(result.voteCount, 10)),
+          backgroundColor: selectedElection.results.map((_, index) => firstFiveColors[index] || generateRandomColor()),
+        },
+      ],
+    }
+  : {
+      labels: ["Keine Daten"],
+      datasets: [{ data: [1], backgroundColor: ["#CCCCCC"] }],
+    };
+
+
   return (
     <Container>
       <Row className="mb-4 align-items-center">
@@ -246,16 +289,14 @@ const StartPage: React.FC = () => {
           <hr />
           <h5>Ergebnisse:</h5>
           {selectedElection?.results && selectedElection.results.length > 0 ? (
-            <ul>
-              {selectedElection.results.map((result: { name: string; voteCount: string }, index: number) => (
-                <li key={index}>
-                  <strong>{result.name}</strong>: {result.voteCount} Stimme/n
-                </li>
-              ))}
-            </ul>
+            <div className="text-center">
+              <Pie data={chartData} />
+            </div>
           ) : (
             <p className="text-muted">Die Ergebnisse können erst nach dem Ende der Wahl angezeigt werden.</p>
           )}
+
+
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseDetailsModal}>
