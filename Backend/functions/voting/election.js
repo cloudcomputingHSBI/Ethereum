@@ -87,7 +87,7 @@ router.post('/createElection', authenticateToken, async (req, res) => {
       endTime,
       walletAddresses
     );
-    await tx.wait(); // Transaktion abwarten
+    await tx.wait();
 
     // Blockchain-ID abrufen
     const blockchainId = await multiElectionVotingContract.electionCount();
@@ -133,7 +133,7 @@ router.get('/elections/:id/details', authenticateToken, async (req, res) => {
     const election = await prisma.election.findUnique({
       where: { election_id: parseInt(id, 10) },
       include: { 
-        election_users: true // Lädt alle berechtigten Benutzer für restricted Wahlen
+        election_users: true
       },
     });
 

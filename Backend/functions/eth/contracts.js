@@ -18,7 +18,7 @@ const wallet = new ethers.Wallet(privateKey, provider);
 console.log("PRIVATE_KEY:", process.env.PRIVATE_KEY ? "Vorhanden" : "Fehlt");
 
 // 3. ABI des **einzigen** Smart Contracts importieren
-const MultiElectionNFTVoting = require("../../abis/MultiElectionNFTVoting.json"); // Prüfe, ob die Datei existiert!
+const MultiElectionNFTVoting = require("../../abis/MultiElectionNFTVoting.json");
 
 // 4. Contract-Adresse aus `.env` laden
 const MULTI_ELECTION_NFT_VOTING_ADDRESS = process.env.MULTI_ELECTION_NFT_VOTING_ADDRESS;

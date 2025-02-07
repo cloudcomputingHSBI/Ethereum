@@ -16,13 +16,13 @@ import CreateSurvey from './pages/createSurvey/createSurvey';
 
 // Funktion zum Überprüfen, ob ein Benutzer eingeloggt ist
 const isAuthenticated = () => {
-  return !!localStorage.getItem('jwtToken'); // Gibt true zurück, wenn ein Token vorhanden ist
+  return !!localStorage.getItem('jwtToken');
 };
 
 // Higher-Order Component für geschützte Routen
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />; // Leitet zur Login-Seite um, wenn der Benutzer nicht eingeloggt ist
+    return <Navigate to="/login" replace />;
   }
   return children;
 };

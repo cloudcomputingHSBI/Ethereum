@@ -25,15 +25,15 @@ const RegisterMRZ: React.FC = () => {
     }
 
     try {
-      // 1️⃣ Wallet im Frontend generieren
+      // Wallet im Frontend generieren
       const wallet = ethers.Wallet.createRandom();
       const publicKey = wallet.address;
       const generatedPrivateKey = wallet.privateKey;
 
-      // 2️⃣ Private Key nur im State speichern (nicht in localStorage!)
+      // Private Key nur im State speichern (nicht in localStorage!)
       setPrivateKey(generatedPrivateKey);
 
-      // 3️⃣ Daten für das Backend vorbereiten
+      // Daten für das Backend vorbereiten
       const generalData = JSON.parse(localStorage.getItem('generalData') || '{}');
       const completeData = { 
         ...generalData, 
@@ -41,7 +41,7 @@ const RegisterMRZ: React.FC = () => {
         publicKey // Public Key wird mitgeschickt!
       };
 
-      // 4️⃣ API-Aufruf mit Public Key
+      // API-Aufruf mit Public Key
       const response = await registerUser(completeData);
 
       if (response && response.walletAddress) {

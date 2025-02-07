@@ -1,18 +1,13 @@
-import { getEnvVar } from "../env";
-
-
 import VotingContractABI from "../../abis/MultiElectionNFTVoting.json";
-
-
-
 import { ethers } from "ethers";
 
-// Nutze `process.env`, nicht `import.meta.env`
-const RPC_URL = "https://sepolia.infura.io/v3/63900b58876143a983fbcb3081113ea8"
-const CONTRACT_ADDRESS = "0xf57E9A61404D816fc3bbC266e20f7c6D642A22DA"
 
-console.log("🔗 RPC-URL:", RPC_URL);
-console.log("📝 Vertragsadresse:", CONTRACT_ADDRESS);
+const RPC_URL = "https://arbitrum-mainnet.infura.io/v3/63900b58876143a983fbcb3081113ea8"
+const CONTRACT_ADDRESS = "0x4b66FaF9B0865c20F852850BdE95A1465aC3ef93"
+
+//const RPC_URL = "https://sepolia.infura.io/v3/63900b58876143a983fbcb3081113ea8"
+//const CONTRACT_ADDRESS = "0xe6B5F25252B6abFdf3D83a7f04D6884d5241B928"
+
 
 export const getProvider = () => {
   return new ethers.JsonRpcProvider(RPC_URL);

@@ -19,13 +19,13 @@ export const getElectionResults = async (electionId: number): Promise<{ name: st
     
     // Überprüfe, ob das Ergebnis tatsächlich ein Array ist
     if (!Array.isArray(response.data.results)) {
-      console.error("❌ API hat ein unerwartetes Ergebnis zurückgegeben:", response.data);
+      console.error("API hat ein unerwartetes Ergebnis zurückgegeben:", response.data);
       return null;
     }
 
-    return response.data.results; // Ergebnisse zurückgeben
+    return response.data.results;
   } catch (error) {
-    console.error("❌ Fehler beim Abrufen der Wahlergebnisse:", error);
+    console.error("Fehler beim Abrufen der Wahlergebnisse:", error);
     return null;
   }
 };
@@ -67,7 +67,7 @@ export const checkAndRefillEth = async (walletAddress: string) => {
   try {
     const response = await apiClient.post("/requestEth", { walletAddress });
 
-    return response.data; // Gibt { success: true, transactionHash } oder { success: false, message } zurück
+    return response.data;
   } catch (error) {
     console.error("Fehler bei der Guthabenprüfung:", error);
     return { success: false, error: "Fehler bei der Guthabenprüfung" };

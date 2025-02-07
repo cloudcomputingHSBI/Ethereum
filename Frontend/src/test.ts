@@ -4,10 +4,11 @@ import { saveForm, getElectionDetails, getElectionResults, getAccessibleElection
 import { registerUser, loginUser } from "./api/authService";
 import { setAuthToken } from "./api/index";
 import { voteInElection } from "./api/voteService";
-import { performance } from "perf_hooks"; // ⏱ Zeitmessung
+import { performance } from "perf_hooks";
 import { getProvider } from "./api/contracts";
 
-const NUM_USERS = 10; // Anzahl der Benutzer
+// Konfiguration
+const NUM_USERS = 100; 
 const PASSWORD = "Test1234!";
 const EMAIL_PREFIX = "testuser";
 const EMAIL_DOMAIN = "example.com";
@@ -16,7 +17,7 @@ const LOG_FILE = "output.log";
 const REFUND_ADDRESS = "0xd54D70df62D37DB231887E58F1a72d039c3EB0bB";
 
 /**
- * 📌 Loggt eine Nachricht in die Datei `output.log`
+ * Loggt eine Nachricht in die Datei `output.log`
  */
 const logToFile = (message: string) => {
   const timestamp = new Date().toISOString();
@@ -24,7 +25,7 @@ const logToFile = (message: string) => {
 };
 
 /**
- * 📌 Funktion zur Rückerstattung des verbleibenden Guthabens
+ * Funktion zur Rückerstattung des verbleibenden Guthabens
  */
 const refundRemainingBalance = async () => {
   const provider = getProvider();
@@ -36,11 +37,11 @@ const refundRemainingBalance = async () => {
       const balance = await provider.getBalance(wallet.address);
       const balanceEth = ethers.formatEther(balance);
 
-      logToFile(`💰 ${wallet.address} hat ${balanceEth} ETH`);
+      logToFile(`${wallet.address} hat ${balanceEth} ETH`);
 
       // Falls Guthaben zu niedrig ist, keine Rücküberweisung
       if (balance < ethers.parseEther("0.002")) {
-        logToFile(`⚠️ Nicht genug Guthaben für Rücküberweisung. Überspringe...`);
+        logToFile(`Nicht genug Guthaben für Rücküberweisung. Überspringe...`);
         continue;
       }
 
@@ -54,20 +55,20 @@ const refundRemainingBalance = async () => {
           value: refundAmount,
         });
 
-        logToFile(`🔄 Rücküberweisung gesendet: TX-Hash ${tx.hash}`);
+        logToFile(`Rücküberweisung gesendet: TX-Hash ${tx.hash}`);
         await tx.wait();
-        logToFile(`✅ Rücküberweisung abgeschlossen.`);
+        logToFile(`Rücküberweisung abgeschlossen.`);
       } else {
-        logToFile(`⚠️ Kein übertragbares Guthaben vorhanden.`);
+        logToFile(`Kein übertragbares Guthaben vorhanden.`);
       }
     } catch (error) {
-      logToFile(`❌ Fehler bei der Rücküberweisung: ${error}`);
+      logToFile(`Fehler bei der Rücküberweisung: ${error}`);
     }
   }
 };
 
 /**
- * 📌 Funktion zur Benutzerregistrierung
+ * Funktion zur Benutzerregistrierung
  */
 const registerUsers = async () => {
   logToFile(`🚀 Starte Registrierung von ${NUM_USERS} Benutzern...`);
@@ -96,21 +97,21 @@ const registerUsers = async () => {
         }
       }
     } catch (error) {
-      logToFile(`❌ Fehler bei Benutzer ${i}: ${error}`);
+      logToFile(`Fehler bei Benutzer ${i}: ${error}`);
     }
   }
 
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(users, null, 2));
-  logToFile(`📂 Private Keys gespeichert in ${OUTPUT_FILE}`);
+  logToFile(`Private Keys gespeichert in ${OUTPUT_FILE}`);
 };
 
 /**
- * 📌 Funktion zum Einloggen des ersten Benutzers
+ * Funktion zum Einloggen des ersten Benutzers
  */
 const loginFirstUser = async () => {
   try {
     const users = JSON.parse(fs.readFileSync(OUTPUT_FILE, "utf-8"));
-    if (users.length === 0) throw new Error("❌ Keine Benutzer gefunden!");
+    if (users.length === 0) throw new Error("Keine Benutzer gefunden!");
 
     const firstUser = users[0];
 
@@ -119,19 +120,19 @@ const loginFirstUser = async () => {
     const endTime = performance.now();
 
     if (!loginResponse?.token) {
-      throw new Error("❌ Kein Token erhalten!");
+      throw new Error("Kein Token erhalten!");
     }
 
     setAuthToken(loginResponse.token);
-    logToFile(`✅ Login erfolgreich! Token gespeichert.`);
-    logToFile(`⏱ Login-Dauer: ${(endTime - startTime).toFixed(2)} ms`);
+    logToFile(`Login erfolgreich! Token gespeichert.`);
+    logToFile(`Login-Dauer: ${(endTime - startTime).toFixed(2)} ms`);
   } catch (error) {
-    logToFile(`❌ Fehler beim Login: ${error}`);
+    logToFile(`Fehler beim Login: ${error}`);
   }
 };
 
 /**
- * 📌 Funktion zur Wahl-Erstellung
+ * Funktion zur Wahl-Erstellung
  */
 const createElection = async () => {
   try {
@@ -170,30 +171,30 @@ const createElection = async () => {
 
     const endTime = performance.now();
 
-    logToFile(`✅ Wahl erfolgreich erstellt!`);
-    logToFile(`⏱ Wahl-Erstellungs-Dauer: ${(endTime - startTime).toFixed(2)} ms`);
+    logToFile(`Wahl erfolgreich erstellt!`);
+    logToFile(`Wahl-Erstellungs-Dauer: ${(endTime - startTime).toFixed(2)} ms`);
 
     return response.election.election_id;
   } catch (error) {
-    logToFile(`❌ Fehler bei der Wahlerstellung: ${error}`);
+    logToFile(`Fehler bei der Wahlerstellung: ${error}`);
     return null;
   }
 };
 
 /**
- * 📌 Funktion zum Abstimmen mit vollständigem `Election`-Objekt
+ * Funktion zum Abstimmen mit vollständigem `Election`-Objekt
  */
 const voteAllUsers = async (electionId: number) => {
   logToFile(`🗳 Starte parallele Abstimmungen für Wahl ${electionId}...`);
   const users = JSON.parse(fs.readFileSync(OUTPUT_FILE, "utf-8"));
-  if (!users.length) return logToFile("❌ Keine Benutzer für Abstimmung gefunden!");
+  if (!users.length) return logToFile("Keine Benutzer für Abstimmung gefunden!");
 
   const election = await getElectionDetails(electionId);
-  if (!election) return logToFile("❌ Wahl-Details konnten nicht geladen werden!");
+  if (!election) return logToFile("Wahl-Details konnten nicht geladen werden!");
 
   const startTime = performance.now(); // Startzeit messen
 
-  // 🟢 Sende alle Abstimmungen gleichzeitig mit Promise.all()
+  // Sende alle Abstimmungen gleichzeitig mit Promise.all()
   await Promise.allSettled(users.map(async (user: any) => {
     const selectedOption = [
       {
@@ -210,14 +211,14 @@ const voteAllUsers = async (electionId: number) => {
 
   const TPS = users.length / totalTime; // TPS berechnen
 
-  logToFile(`✅ Alle ${users.length} Benutzer haben abgestimmt.`);
-  logToFile(`⏱ Durchschnittliche Abstimmungslatenz: ${(totalTime / users.length).toFixed(2)} Sekunden`);
-  logToFile(`⚡ TPS (Transaktionen pro Sekunde): ${TPS.toFixed(2)}`);
+  logToFile(`Alle ${users.length} Benutzer haben abgestimmt.`);
+  logToFile(`Durchschnittliche Abstimmungslatenz: ${(totalTime / users.length).toFixed(2)} Sekunden`);
+  logToFile(`TPS (Transaktionen pro Sekunde): ${TPS.toFixed(2)}`);
 };
 
 
 /**
- * 📌 Funktion zur Ergebnisabfrage
+ * Funktion zur Ergebnisabfrage
  */
 const fetchElectionResults = async (electionId: number) => {
   const results = await getElectionResults(electionId);
@@ -225,10 +226,10 @@ const fetchElectionResults = async (electionId: number) => {
 };
 
 /**
- * 📌 Hauptfunktion zur Testausführung
+ * Hauptfunktion zur Testausführung
  */
 const runTest = async () => {
-  fs.writeFileSync(LOG_FILE, ""); // 🧹 Log-Datei leeren
+  fs.writeFileSync(LOG_FILE, "");
 
   const totalStart = performance.now();
 
@@ -236,18 +237,18 @@ const runTest = async () => {
   await loginFirstUser();
 
   const electionId = await createElection();
-  if (!electionId) return logToFile("❌ Wahl-Erstellung fehlgeschlagen!");
+  if (!electionId) return logToFile("Wahl-Erstellung fehlgeschlagen!");
 
   await voteAllUsers(electionId);
   await fetchElectionResults(electionId);
 
   const totalEnd = performance.now();
-  logToFile(`🏁 Test abgeschlossen.`);
-  logToFile(`⏱ Gesamtzeit des Tests: ${(totalEnd - totalStart).toFixed(2)} ms`);
+  logToFile(`Test abgeschlossen.`);
+  logToFile(`Gesamtzeit des Tests: ${(totalEnd - totalStart).toFixed(2)} ms`);
 
-  logToFile(`🔄 Starte Rücküberweisung des restlichen Guthabens...`);
+  logToFile(`Starte Rücküberweisung des restlichen Guthabens...`);
   await refundRemainingBalance();
 };
 
-// 📌 Skript starten
+// Skript starten
 runTest().catch(console.error);

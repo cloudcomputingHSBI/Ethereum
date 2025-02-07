@@ -30,20 +30,20 @@ export const voteInElection = async (election: any, submittedData: any, privateK
 
   
     if (!privateKey) {
-      console.error("❌ Fehler: Kein Private Key übergeben!");
+      console.error("Fehler: Kein Private Key übergeben!");
       return { success: false, error: "Private Key fehlt" };
     }
 
     const selectedKey = submittedData[0]?.value[0];
     if (!selectedKey) {
-      console.error("❌ Fehler: Kein Kandidat gewählt.");
+      console.error("Fehler: Kein Kandidat gewählt.");
       return { success: false, error: "Kein Kandidat gewählt" };
     }
 
     // Wallet-Adresse abrufen
     const walletAddress = await getPublicWallet();
     if (!walletAddress) {
-      console.error("❌ Wallet-Adresse konnte nicht abgerufen werden.");
+      console.error("Wallet-Adresse konnte nicht abgerufen werden.");
       return { success: false, error: "Wallet-Adresse nicht abrufbar" };
     }
 
@@ -51,35 +51,30 @@ export const voteInElection = async (election: any, submittedData: any, privateK
     const provider = getProvider();
     const wallet = new ethers.Wallet(privateKey, provider);
 
-    // if (wallet.address !== walletAddress) {
-    //   console.error("❌ Private Key stimmt nicht mit gespeicherter Wallet-Adresse überein.");
-    //   return { success: false, error: "Private Key stimmt nicht mit Wallet überein" };
-    // }
 
     // Smart Contract Instanz holen
     const contract = getVotingContract(wallet);
-    console.log("🔗 Smart Contract:", contract);
 
     // Bestimme den Kandidaten-Index
     const formSchema = Array.isArray(election.form_schema) ? election.form_schema : [];
     const selectedCandidateIndex = findCandidateIndex(formSchema, selectedKey);
 
     if (selectedCandidateIndex === null) {
-      console.error("❌ Fehler: Der gewählte Kandidat konnte nicht gefunden werden.");
+      console.error("Fehler: Der gewählte Kandidat konnte nicht gefunden werden.");
       return { success: false, error: "Kandidat nicht gefunden" };
     }
 
     // Transaktion senden
-    console.log(`🗳 Stimme wird abgegeben für: ${selectedCandidateIndex}`);
-    console.log(`📝 Wahl-ID: ${election.blockchain_id}`);
+    console.log(`Stimme wird abgegeben für: ${selectedCandidateIndex}`);
+    console.log(`Wahl-ID: ${election.blockchain_id}`);
     const tx = await contract.vote(election.blockchain_id, selectedCandidateIndex);
     await tx.wait();
 
-    console.log(`✅ Stimme erfolgreich abgegeben! TX-Hash: ${tx.hash}`);
+    console.log(`Stimme erfolgreich abgegeben! TX-Hash: ${tx.hash}`);
 
     return { success: true, transactionHash: tx.hash };
   } catch (error) {
-    console.error("❌ Fehler bei der Abstimmung:", error);
+    console.error("Fehler bei der Abstimmung:", error);
     return { success: false, error };
   }
 };

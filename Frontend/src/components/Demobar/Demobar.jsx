@@ -114,7 +114,7 @@ class Demobar extends React.Component {
       console.error("Fehler beim Speichern:", error);
       alert("Fehler beim Speichern der Wahl!");
     } finally {
-      this.setState({ isSaving: false }); // Ladezustand zurücksetzen
+      this.setState({ isSaving: false });
     }
   }
   
@@ -237,7 +237,7 @@ class Demobar extends React.Component {
                 <div className="modal-body">
                   <p className="text-muted">
                     Geben Sie zunächst die Eckdaten der Wahl (Name, Beschreibung, Startdatum und Enddatum) ein. Falls
-                    die Wahl geschützt werden soll, aktivieren Sie die Checkbox und vergeben ein Passwort. Im nächsten
+                    die Wahl geschützt werden soll, aktivieren Sie die Checkbox und wählen Sie in der Liste aus, welche Nutzer wahlberechtigt sind. Im nächsten
                     Schritt können Sie mit dem Formbuilder die Wahlstruktur erstellen und anschließend in der Vorschau
                     überprüfen. Speichern Sie die Wahl über die Schaltfläche "Preview -{'>'} Save".
                   </p>
@@ -306,7 +306,7 @@ class Demobar extends React.Component {
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    onClick={() => this.props.navigate('/home')} // Navigation zu Home
+                    onClick={() => this.props.navigate('/home')}
                   >
                     Abbrechen
                   </button>

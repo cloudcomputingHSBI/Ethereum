@@ -51,16 +51,16 @@ async function requestEth(req, res) {
   }
 
   try {
-    // 1️⃣ Guthaben des Nutzers abrufen
+    // Guthaben des Nutzers abrufen
     const balance = await getWalletBalance(walletAddress);
     console.log(`Wallet-Guthaben: ${ethers.formatEther(balance)} ETH`);
 
-    // 2️⃣ Falls genug Guthaben vorhanden ist, kein Nachladen nötig
+    // Falls genug Guthaben vorhanden ist, kein Nachladen nötig
     if (balance >= MIN_BALANCE) {
       return res.json({ success: true, message: "Guthaben reicht aus, keine Nachladung erforderlich" });
     }
 
-    // 3️⃣ ETH nachladen
+    // ETH nachladen
     console.log("Guthaben zu niedrig, überweise ETH...");
     const txHash = await sendEthToUser(walletAddress);
 
