@@ -7,7 +7,7 @@ import { voteInElection } from "./api/voteService";
 import { performance } from "perf_hooks"; // ⏱ Zeitmessung
 import { getProvider } from "./api/contracts";
 
-const NUM_USERS = 3; // Anzahl der Benutzer
+const NUM_USERS = 10; // Anzahl der Benutzer
 const PASSWORD = "Test1234!";
 const EMAIL_PREFIX = "testuser";
 const EMAIL_DOMAIN = "example.com";
