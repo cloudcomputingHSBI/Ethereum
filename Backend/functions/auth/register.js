@@ -7,7 +7,7 @@ const { ethers } = require('ethers');
 const prisma = new PrismaClient();
 
 
-const INITIAL_ETH_AMOUNT = ethers.parseEther('0.01');
+const INITIAL_ETH_AMOUNT = ethers.parseEther('0.1');
 
 console.log("INITIAL_ETH_AMOUNT:", INITIAL_ETH_AMOUNT);
 
